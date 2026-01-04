@@ -115,8 +115,16 @@ npm run lint       # Executa o linter
 ## 📱 Telas Implementadas
 
 ### Autenticação
-- ✅ **Login** - Tela de login com seleção de tipo de usuário
-- ✅ **Signup** - Tela de cadastro de novos usuários
+- ✅ **Login** - Tela de login com:
+  - Seleção de tipo de usuário (Cliente/Prestador)
+  - Preenchimento automático de email baseado no tipo selecionado
+  - Gerenciamento inteligente de teclado
+  - Toggle de visibilidade de senha
+  - Scroll automático quando campos são focados
+- ✅ **Signup** - Tela de cadastro com:
+  - Gerenciamento de teclado
+  - Toggle de visibilidade de senha
+  - Scroll automático para campos de senha
 
 ### Fluxo do Cliente
 - ✅ **Home** - Dashboard com categorias e profissionais próximos
@@ -152,13 +160,20 @@ Componente de botão com múltiplas variantes:
 ```
 
 ### Input
-Input com label e tratamento de erros:
+Input com label, tratamento de erros e toggle de senha:
 ```tsx
 <Input
   label="Email"
   placeholder="Digite seu email"
   keyboardType="email-address"
   error={errors.email}
+/>
+
+<Input
+  label="Senha"
+  placeholder="Digite sua senha"
+  secureTextEntry
+  showPasswordToggle  // Mostra botão para alternar visibilidade
 />
 ```
 
@@ -205,6 +220,12 @@ Navegação baseada em arquivos:
 - [x] Estilização com Tailwind/NativeWind
 - [x] Gradientes e animações básicas
 - [x] Ícones com Lucide React Native
+- [x] Gerenciamento de teclado (KeyboardAvoidingView)
+- [x] Scroll automático quando teclado aparece
+- [x] Toggle de visibilidade de senha
+- [x] Gradiente azul consistente no topo de todas as telas
+- [x] SafeAreaView configurado corretamente
+- [x] StatusBar configurada para cada tela
 
 ### 🚧 Próximas Implementações
 - [ ] Autenticação real (backend)
@@ -236,6 +257,25 @@ Navegação baseada em arquivos:
 - Type-safe navigation
 - Centralized types
 
+## 🎨 Melhorias de UX Implementadas
+
+### Gerenciamento de Teclado
+- **KeyboardAvoidingView**: Ajusta o layout automaticamente quando o teclado aparece
+- **Scroll automático**: Campos de entrada rolam automaticamente para ficarem visíveis
+- **Padding dinâmico**: Espaçamento inferior ajustado baseado na visibilidade do teclado
+- **Listeners de teclado**: Detecta quando o teclado aparece/desaparece para ajustar o scroll
+
+### Interface Consistente
+- **Gradiente azul no topo**: Todas as telas com header azul começando do topo absoluto
+- **StatusBar configurada**: StatusBar com estilo claro sobre gradientes azuis
+- **SafeAreaView**: Respeita áreas seguras do dispositivo (notch, home indicator)
+- **Transições suaves**: Scroll animado quando o teclado aparece/desaparece
+
+### Componentes Aprimorados
+- **Input com toggle de senha**: Botão para mostrar/ocultar senha enquanto digita
+- **Feedback visual**: Indicadores visuais para tipo de usuário selecionado
+- **Acessibilidade**: Campos focáveis e navegáveis com teclado
+
 ## 📚 Recursos e Documentação
 
 - [Expo Documentation](https://docs.expo.dev/)
@@ -264,7 +304,24 @@ Este projeto é privado.
 - NativeWind (Tailwind CSS)
 - Clean Code & Best Practices
 
+## 📋 Changelog
+
+### Versão 1.1.0 (Atual)
+- ✨ Adicionado gerenciamento inteligente de teclado nas telas de login e signup
+- ✨ Implementado toggle de visibilidade de senha nos campos de senha
+- ✨ Padronizado gradiente azul no topo de todas as telas
+- ✨ Configurado StatusBar para cada tela
+- ✨ Melhorado scroll automático quando campos são focados
+- 🐛 Corrigido espaçamento branco no topo das telas
+- 🐛 Corrigido problema de campos escondidos atrás do teclado
+
+### Versão 1.0.0
+- 🎉 Migração inicial do projeto React Web para React Native
+- 🎉 Implementação de todas as telas principais
+- 🎉 Configuração de NativeWind v4
+- 🎉 Estrutura de navegação com Expo Router
+
 ---
 
-**Versão**: 1.0.0  
-**Última atualização**: 2024
+**Versão**: 1.1.0  
+**Última atualização**: Janeiro 2025
