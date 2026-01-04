@@ -194,23 +194,28 @@ export default function ProfessionalProfileScreen() {
       </ScrollView>
 
       {/* Bottom Actions */}
-      <View className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-4">
-        <View className="flex-row gap-3">
-          <TouchableOpacity className="w-12 h-12 rounded-xl border-2 border-[#3B82F6] items-center justify-center">
-            <Phone size={20} color="#3B82F6" />
-          </TouchableOpacity>
-          <TouchableOpacity className="w-12 h-12 rounded-xl border-2 border-[#3B82F6] items-center justify-center">
-            <MessageCircle size={20} color="#3B82F6" />
-          </TouchableOpacity>
-          <Button
-            onPress={() => router.push("/(client)/service-request")}
-            variant="primary"
-            className="flex-1"
-          >
-            Solicitar Serviço
-          </Button>
+      <SafeAreaView
+        edges={["bottom"]}
+        className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200"
+      >
+        <View className="px-6 py-4">
+          <View className="flex-row gap-3">
+            <TouchableOpacity className="w-12 h-12 rounded-xl border-2 border-[#3B82F6] items-center justify-center">
+              <Phone size={20} color="#3B82F6" />
+            </TouchableOpacity>
+            <TouchableOpacity className="w-12 h-12 rounded-xl border-2 border-[#3B82F6] items-center justify-center">
+              <MessageCircle size={20} color="#3B82F6" />
+            </TouchableOpacity>
+            <Button
+              onPress={() => router.push("/(client)/service-request")}
+              variant="primary"
+              className="flex-1"
+            >
+              Solicitar Serviço
+            </Button>
+          </View>
         </View>
-      </View>
+      </SafeAreaView>
     </SafeAreaView>
   );
 }

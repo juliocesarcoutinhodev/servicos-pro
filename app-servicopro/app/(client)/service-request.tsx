@@ -202,16 +202,18 @@ export default function ServiceRequestScreen() {
       </ScrollView>
 
       {/* Bottom Actions */}
-      <View className="bg-white border-t border-gray-200 px-6 py-4">
-        <Button
-          onPress={() => router.push("/(client)/payment")}
-          variant="primary"
-          size="lg"
-          fullWidth
-        >
-          Continuar para Pagamento
-        </Button>
-      </View>
+      <SafeAreaView edges={["bottom"]} className="bg-white border-t border-gray-200">
+        <View className="px-6 py-4">
+          <Button
+            onPress={() => router.push("/(client)/payment")}
+            variant="primary"
+            size="lg"
+            fullWidth
+          >
+            Continuar para Pagamento
+          </Button>
+        </View>
+      </SafeAreaView>
     </SafeAreaView>
   );
 }

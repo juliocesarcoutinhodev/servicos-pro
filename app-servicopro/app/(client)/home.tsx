@@ -145,29 +145,31 @@ export default function ClientHomeScreen() {
         </View>
 
         {/* Bottom Navigation */}
-        <View className="bg-white border-t border-gray-200 px-6 py-4 mt-6">
-          <View className="flex-row items-center justify-around">
-            <TouchableOpacity className="items-center gap-1">
-              <HomeIcon size={24} color="#3B82F6" />
-              <Text className="text-xs text-[#3B82F6]">Início</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => router.push("/(client)/categories")}
-              className="items-center gap-1"
-            >
-              <Search size={24} color="#64748B" />
-              <Text className="text-xs text-[#64748B]">Buscar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity className="items-center gap-1">
-              <Wrench size={24} color="#64748B" />
-              <Text className="text-xs text-[#64748B]">Serviços</Text>
-            </TouchableOpacity>
-            <TouchableOpacity className="items-center gap-1">
-              <User size={24} color="#64748B" />
-              <Text className="text-xs text-[#64748B]">Perfil</Text>
-            </TouchableOpacity>
+        <SafeAreaView edges={["bottom"]} className="bg-white border-t border-gray-200">
+          <View className="px-6 py-4">
+            <View className="flex-row items-center justify-around">
+              <TouchableOpacity className="items-center gap-1">
+                <HomeIcon size={24} color="#3B82F6" />
+                <Text className="text-xs text-[#3B82F6]">Início</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => router.push("/(client)/categories")}
+                className="items-center gap-1"
+              >
+                <Search size={24} color="#64748B" />
+                <Text className="text-xs text-[#64748B]">Buscar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity className="items-center gap-1">
+                <Wrench size={24} color="#64748B" />
+                <Text className="text-xs text-[#64748B]">Serviços</Text>
+              </TouchableOpacity>
+              <TouchableOpacity className="items-center gap-1">
+                <User size={24} color="#64748B" />
+                <Text className="text-xs text-[#64748B]">Perfil</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        </SafeAreaView>
       </ScrollView>
     </SafeAreaView>
   );

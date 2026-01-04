@@ -22,6 +22,7 @@ export default function LoginScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   const [selectedUserType, setSelectedUserType] = useState<UserType>(null);
   const [email, setEmail] = useState("");
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   const handleUserTypeSelect = (type: "client" | "provider") => {
     setSelectedUserType(type);
@@ -45,6 +46,7 @@ export default function LoginScreen() {
     const keyboardDidShowListener = Keyboard.addListener(
       "keyboardDidShow",
       () => {
+        setIsKeyboardVisible(true);
         // Scroll para o final quando o teclado aparecer
         setTimeout(() => {
           scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -52,8 +54,20 @@ export default function LoginScreen() {
       }
     );
 
+    const keyboardDidHideListener = Keyboard.addListener(
+      "keyboardDidHide",
+      () => {
+        setIsKeyboardVisible(false);
+        // Scroll de volta para o topo quando o teclado desaparecer
+        setTimeout(() => {
+          scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+        }, 100);
+      }
+    );
+
     return () => {
       keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
     };
   }, []);
 
@@ -73,18 +87,16 @@ export default function LoginScreen() {
           className="flex-1"
           contentContainerStyle={{
             flexGrow: 1,
-            paddingBottom: Platform.OS === "ios" ? 300 : 350,
+            paddingBottom: isKeyboardVisible
+              ? Platform.OS === "ios"
+                ? 300
+                : 350
+              : 20,
           }}
           showsVerticalScrollIndicator={false}
           style={{ backgroundColor: "transparent" }}
           keyboardShouldPersistTaps="handled"
           bounces={false}
-          onContentSizeChange={() => {
-            // Scroll para o final quando o conteúdo mudar (teclado aparecer)
-            setTimeout(() => {
-              scrollViewRef.current?.scrollToEnd({ animated: true });
-            }, 150);
-          }}
         >
         {/* Header */}
         <View className="px-6 pt-8 pb-8">
