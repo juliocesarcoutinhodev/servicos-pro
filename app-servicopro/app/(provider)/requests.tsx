@@ -201,6 +201,6 @@ export default function ProviderRequestsScreen() {
           ))}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
