@@ -3,8 +3,9 @@ import { Input } from "@/components/ui/Input";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { Briefcase, User } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -18,6 +19,7 @@ type UserType = "client" | "provider" | null;
 
 export default function LoginScreen() {
   const router = useRouter();
+  const scrollViewRef = useRef<ScrollView>(null);
   const [selectedUserType, setSelectedUserType] = useState<UserType>(null);
   const [email, setEmail] = useState("");
 
@@ -39,6 +41,22 @@ export default function LoginScreen() {
     }
   };
 
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      () => {
+        // Scroll para o final quando o teclado aparecer
+        setTimeout(() => {
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 200);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+    };
+  }, []);
+
   return (
     <SafeAreaView className="flex-1" edges={["top"]}>
       <LinearGradient
@@ -46,16 +64,27 @@ export default function LoginScreen() {
         className="absolute inset-0"
       />
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
         <ScrollView
+          ref={scrollViewRef}
           className="flex-1"
-          contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingBottom: Platform.OS === "ios" ? 300 : 350,
+          }}
           showsVerticalScrollIndicator={false}
           style={{ backgroundColor: "transparent" }}
           keyboardShouldPersistTaps="handled"
+          bounces={false}
+          onContentSizeChange={() => {
+            // Scroll para o final quando o conteúdo mudar (teclado aparecer)
+            setTimeout(() => {
+              scrollViewRef.current?.scrollToEnd({ animated: true });
+            }, 150);
+          }}
         >
         {/* Header */}
         <View className="px-6 pt-8 pb-8">
@@ -68,7 +97,7 @@ export default function LoginScreen() {
         </View>
 
         {/* Content */}
-        <View className="flex-1 bg-[#F8FAFC] rounded-t-[32px] px-6 pt-10">
+        <View className="bg-[#F8FAFC] rounded-t-[32px] px-6 pt-10 pb-6">
           <Text className="text-center text-2xl font-bold mb-2">
             Bem-vindo!
           </Text>
@@ -158,6 +187,12 @@ export default function LoginScreen() {
               placeholder="Digite sua senha"
               secureTextEntry
               showPasswordToggle
+              onFocus={() => {
+                // Scroll para o campo de senha quando receber foco
+                setTimeout(() => {
+                  scrollViewRef.current?.scrollToEnd({ animated: true });
+                }, 200);
+              }}
             />
           </View>
 
