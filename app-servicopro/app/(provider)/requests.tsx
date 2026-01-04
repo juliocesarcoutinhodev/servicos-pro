@@ -6,6 +6,7 @@ import { Calendar, ChevronLeft, MapPin } from "lucide-react-native";
 import React, { useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 
 const allRequests = [
   {
@@ -64,12 +65,13 @@ export default function ProviderRequestsScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-[#F8FAFC]" edges={["top"]}>
+    <View className="flex-1 bg-[#F8FAFC]">
+      <StatusBar style="light" />
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <LinearGradient
           colors={["#1E40AF", "#3B82F6"]}
-          className="px-6 pt-12 pb-8"
+          className="px-6 pt-16 pb-8"
         >
           <TouchableOpacity
             onPress={() => router.back()}

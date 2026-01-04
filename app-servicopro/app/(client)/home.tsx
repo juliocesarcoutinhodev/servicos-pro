@@ -13,6 +13,7 @@ import {
 import React from "react";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 
 const categories = [
   { icon: Zap, name: "Eletricista", color: ["#FACC15", "#FB923C"], count: 45 },
@@ -37,12 +38,13 @@ export default function ClientHomeScreen() {
   const router = useRouter();
 
   return (
-    <SafeAreaView className="flex-1 bg-[#F8FAFC]" edges={["top"]}>
+    <View className="flex-1 bg-[#F8FAFC]">
+      <StatusBar style="light" />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Header with gradient */}
         <LinearGradient
           colors={["#1E40AF", "#3B82F6"]}
-          className="px-6 pt-6 pb-8 rounded-b-[32px]"
+          className="px-6 pt-16 pb-8 rounded-b-[32px]"
         >
           <View className="flex-row items-center justify-between mb-6">
             <View>
@@ -171,6 +173,6 @@ export default function ClientHomeScreen() {
           </View>
         </SafeAreaView>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

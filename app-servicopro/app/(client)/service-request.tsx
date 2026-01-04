@@ -13,6 +13,7 @@ import {
 import React, { useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 
 const timeSlots = ["08:00", "10:00", "14:00", "16:00", "18:00", "20:00"];
 const services = [
@@ -28,12 +29,13 @@ export default function ServiceRequestScreen() {
   const [selectedService, setSelectedService] = useState("");
 
   return (
-    <SafeAreaView className="flex-1 bg-[#F8FAFC]" edges={["top"]}>
+    <View className="flex-1 bg-[#F8FAFC]">
+      <StatusBar style="light" />
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <LinearGradient
           colors={["#1E40AF", "#3B82F6"]}
-          className="px-6 pt-12 pb-8"
+          className="px-6 pt-16 pb-8"
         >
           <TouchableOpacity
             onPress={() => router.back()}
@@ -214,6 +216,6 @@ export default function ServiceRequestScreen() {
           </Button>
         </View>
       </SafeAreaView>
-    </SafeAreaView>
+    </View>
   );
 }
