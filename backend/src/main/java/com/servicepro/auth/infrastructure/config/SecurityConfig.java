@@ -1,9 +1,12 @@
 package com.servicepro.auth.infrastructure.config;
 
+import com.servicepro.auth.application.service.ratelimit.AuthRateLimitService;
 import com.servicepro.auth.domain.gateway.TokenGateway;
+import com.servicepro.auth.infrastructure.security.AuthRateLimitFilter;
 import com.servicepro.auth.infrastructure.security.JwtAuthenticationFilter;
 import com.servicepro.shared.infrastructure.security.RestAccessDeniedHandler;
 import com.servicepro.shared.infrastructure.security.RestAuthenticationEntryPoint;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -18,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
 @Configuration
 @EnableMethodSecurity
@@ -26,6 +30,7 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
+            AuthRateLimitFilter authRateLimitFilter,
             JwtAuthenticationFilter jwtAuthenticationFilter,
             RestAuthenticationEntryPoint restAuthenticationEntryPoint,
             RestAccessDeniedHandler restAccessDeniedHandler
@@ -54,7 +59,16 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(authRateLimitFilter, JwtAuthenticationFilter.class)
                 .build();
+    }
+
+    @Bean
+    AuthRateLimitFilter authRateLimitFilter(
+            AuthRateLimitService authRateLimitService,
+            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver handlerExceptionResolver
+    ) {
+        return new AuthRateLimitFilter(authRateLimitService, handlerExceptionResolver);
     }
 
     @Bean

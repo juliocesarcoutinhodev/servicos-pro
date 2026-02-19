@@ -1,6 +1,9 @@
 package com.servicepro.auth.interfaces;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.servicepro.auth.application.service.ratelimit.AuthRateLimitAction;
+import com.servicepro.auth.application.service.ratelimit.AuthRateLimitService;
+import com.servicepro.auth.application.service.ratelimit.RateLimitStatus;
 import com.servicepro.auth.application.usecase.login.LoginCommand;
 import com.servicepro.auth.application.usecase.login.LoginResult;
 import com.servicepro.auth.application.usecase.login.LoginUseCase;
@@ -16,12 +19,14 @@ import com.servicepro.auth.application.usecase.signup.SignupCommand;
 import com.servicepro.auth.application.usecase.signup.SignupUseCase;
 import com.servicepro.auth.domain.exception.EmailAlreadyExistsException;
 import com.servicepro.auth.domain.exception.InvalidCredentialsException;
+import com.servicepro.auth.domain.exception.RateLimitExceededException;
 import com.servicepro.auth.domain.exception.TokenRevokedException;
 import com.servicepro.auth.domain.gateway.TokenGateway;
 import com.servicepro.auth.domain.model.AccessTokenClaims;
 import com.servicepro.auth.domain.model.Role;
 import com.servicepro.auth.domain.model.User;
 import com.servicepro.auth.infrastructure.config.SecurityConfig;
+import com.servicepro.auth.infrastructure.security.AuthRateLimitFilter;
 import com.servicepro.auth.infrastructure.security.CookieUtils;
 import com.servicepro.auth.interfaces.dto.LoginRequest;
 import com.servicepro.auth.interfaces.dto.SignupRequest;
@@ -38,6 +43,7 @@ import jakarta.servlet.http.Cookie;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -52,6 +58,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -96,6 +104,9 @@ class AuthControllerTest {
     private LogoutUseCase logoutUseCase;
 
     @MockBean
+    private AuthRateLimitService authRateLimitService;
+
+    @MockBean
     private SignupRequestMapper signupRequestMapper;
 
     @MockBean
@@ -112,6 +123,12 @@ class AuthControllerTest {
 
     @MockBean
     private UserDetailsService userDetailsService;
+
+    @BeforeEach
+    void setupRateLimitDefaults() {
+        given(authRateLimitService.consume(any(AuthRateLimitAction.class), anyString()))
+                .willReturn(new RateLimitStatus(10, 9, 60));
+    }
 
     @Test
     void shouldReturn201WhenSignupSucceeds() throws Exception {
@@ -251,11 +268,42 @@ class AuthControllerTest {
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
                         .string(HttpHeaders.SET_COOKIE, containsString("Secure")))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
-                        .string(HttpHeaders.SET_COOKIE, containsString("SameSite=Strict")));
+                        .string(HttpHeaders.SET_COOKIE, containsString("SameSite=Strict")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string(AuthRateLimitFilter.HEADER_RATE_LIMIT_LIMIT, "10"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string(AuthRateLimitFilter.HEADER_RATE_LIMIT_REMAINING, "9"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string(AuthRateLimitFilter.HEADER_RATE_LIMIT_RESET, "60"));
 
         then(loginRequestMapper).should().toCommand(any(LoginRequest.class));
         then(loginUseCase).should().execute(any(LoginCommand.class));
         then(cookieUtils).should().buildRefreshTokenCookie("refresh-token");
+    }
+
+    @Test
+    void shouldReturn429WhenLoginRateLimitIsExceeded() throws Exception {
+        given(authRateLimitService.consume(eq(AuthRateLimitAction.LOGIN), anyString()))
+                .willThrow(new RateLimitExceededException("login", 10, 0, 42, 60));
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"joao@email.com\",\"password\":\"SenhaForte123\"}"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string(HttpHeaders.RETRY_AFTER, "42"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string(AuthRateLimitFilter.HEADER_RATE_LIMIT_LIMIT, "10"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string(AuthRateLimitFilter.HEADER_RATE_LIMIT_REMAINING, "0"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string(AuthRateLimitFilter.HEADER_RATE_LIMIT_RESET, "42"))
+                .andExpect(jsonPath("$.status").value(429))
+                .andExpect(jsonPath("$.message", containsString("Limite de requisicoes")))
+                .andExpect(jsonPath("$.details.action").value("login"))
+                .andExpect(jsonPath("$.details.limit").value(10))
+                .andExpect(jsonPath("$.details.remaining").value(0))
+                .andExpect(jsonPath("$.details.retryAfterSeconds").value(42));
     }
 
     @Test

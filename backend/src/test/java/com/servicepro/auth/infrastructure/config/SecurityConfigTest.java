@@ -1,5 +1,8 @@
 package com.servicepro.auth.infrastructure.config;
 
+import com.servicepro.auth.application.service.ratelimit.AuthRateLimitAction;
+import com.servicepro.auth.application.service.ratelimit.AuthRateLimitService;
+import com.servicepro.auth.application.service.ratelimit.RateLimitStatus;
 import com.servicepro.auth.application.usecase.login.LoginUseCase;
 import com.servicepro.auth.application.usecase.logout.LogoutUseCase;
 import com.servicepro.auth.application.usecase.me.GetCurrentUserUseCase;
@@ -23,6 +26,7 @@ import com.servicepro.shared.interfaces.exception.ValidacaoExceptionHandler;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -35,6 +39,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -75,6 +80,9 @@ class SecurityConfigTest {
     private LogoutUseCase logoutUseCase;
 
     @MockBean
+    private AuthRateLimitService authRateLimitService;
+
+    @MockBean
     private SignupRequestMapper signupRequestMapper;
 
     @MockBean
@@ -91,6 +99,12 @@ class SecurityConfigTest {
 
     @MockBean
     private UserDetailsService userDetailsService;
+
+    @BeforeEach
+    void setupRateLimitDefaults() {
+        given(authRateLimitService.consume(any(AuthRateLimitAction.class), anyString()))
+                .willReturn(new RateLimitStatus(10, 9, 60));
+    }
 
     @Test
     void shouldPermitPublicLoginWithoutAuthentication() throws Exception {

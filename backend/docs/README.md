@@ -12,3 +12,4 @@ Documentação funcional/técnica do backend.
   - incluir exemplos de payload mínimos válidos
   - preferir variáveis de collection (`{{...}}`) em vez de valores fixos
   - manter scripts de `test` para salvar tokens/valores dinâmicos quando aplicável
+  - para endpoints com rate limit, mapear `X-RateLimit-Remaining`, `X-RateLimit-Reset` e `Retry-After` na collection

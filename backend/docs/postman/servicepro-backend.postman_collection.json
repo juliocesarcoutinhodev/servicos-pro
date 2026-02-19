@@ -100,6 +100,21 @@
       "key": "accessToken",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "rateLimitRemaining",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "rateLimitReset",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "retryAfterSeconds",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -136,7 +151,9 @@
                 "exec": [
                   "pm.test('Status code is 201', function () {",
                   "  pm.response.to.have.status(201);",
-                  "});"
+                  "});",
+                  "pm.collectionVariables.set('rateLimitRemaining', pm.response.headers.get('X-RateLimit-Remaining') || '');",
+                  "pm.collectionVariables.set('rateLimitReset', pm.response.headers.get('X-RateLimit-Reset') || '');"
                 ]
               }
             }
@@ -172,7 +189,9 @@
                 "exec": [
                   "pm.test('Status code is 201', function () {",
                   "  pm.response.to.have.status(201);",
-                  "});"
+                  "});",
+                  "pm.collectionVariables.set('rateLimitRemaining', pm.response.headers.get('X-RateLimit-Remaining') || '');",
+                  "pm.collectionVariables.set('rateLimitReset', pm.response.headers.get('X-RateLimit-Reset') || '');"
                 ]
               }
             }
@@ -215,7 +234,10 @@
                   "const data = pm.response.json()?.data;",
                   "if (data?.accessToken) {",
                   "  pm.collectionVariables.set('accessToken', data.accessToken);",
-                  "}"
+                  "}",
+                  "pm.collectionVariables.set('rateLimitRemaining', pm.response.headers.get('X-RateLimit-Remaining') || '');",
+                  "pm.collectionVariables.set('rateLimitReset', pm.response.headers.get('X-RateLimit-Reset') || '');",
+                  "pm.collectionVariables.unset('retryAfterSeconds');"
                 ]
               }
             }

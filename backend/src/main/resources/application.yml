@@ -31,3 +31,8 @@ security:
     secret: ${JWT_SECRET:change-me-in-prod}
     access-token-ttl-seconds: ${JWT_ACCESS_TOKEN_TTL_SECONDS:900}
     refresh-token-ttl-seconds: ${JWT_REFRESH_TOKEN_TTL_SECONDS:604800}
+
+auth:
+  rate-limit:
+    max-requests-per-window: ${AUTH_RATE_LIMIT_MAX_REQUESTS_PER_WINDOW:10}
+    window-seconds: ${AUTH_RATE_LIMIT_WINDOW_SECONDS:60}
