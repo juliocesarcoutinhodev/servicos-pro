@@ -1,14 +1,22 @@
 package com.servicepro.auth.interfaces;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.servicepro.auth.application.usecase.login.LoginCommand;
+import com.servicepro.auth.application.usecase.login.LoginResult;
+import com.servicepro.auth.application.usecase.login.LoginUseCase;
+import com.servicepro.auth.application.usecase.login.TokenPair;
 import com.servicepro.auth.application.usecase.signup.SignupCommand;
 import com.servicepro.auth.application.usecase.signup.SignupUseCase;
 import com.servicepro.auth.domain.exception.EmailAlreadyExistsException;
+import com.servicepro.auth.domain.exception.InvalidCredentialsException;
 import com.servicepro.auth.domain.model.Role;
 import com.servicepro.auth.domain.model.User;
 import com.servicepro.auth.infrastructure.config.SecurityConfig;
+import com.servicepro.auth.infrastructure.security.CookieUtils;
+import com.servicepro.auth.interfaces.dto.LoginRequest;
 import com.servicepro.auth.interfaces.dto.SignupRequest;
 import com.servicepro.auth.interfaces.dto.UserResponse;
+import com.servicepro.auth.interfaces.mapper.LoginRequestMapper;
 import com.servicepro.auth.interfaces.mapper.SignupRequestMapper;
 import com.servicepro.auth.interfaces.mapper.UserMapper;
 import com.servicepro.shared.infrastructure.security.RestAccessDeniedHandler;
@@ -23,7 +31,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseCookie;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.containsString;
@@ -43,6 +55,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         ValidacaoExceptionHandler.class,
         GenericExceptionHandler.class
 })
+@ActiveProfiles("test")
 class AuthControllerTest {
 
     @Autowired
@@ -55,10 +68,22 @@ class AuthControllerTest {
     private SignupUseCase signupUseCase;
 
     @MockBean
+    private LoginUseCase loginUseCase;
+
+    @MockBean
     private SignupRequestMapper signupRequestMapper;
 
     @MockBean
+    private LoginRequestMapper loginRequestMapper;
+
+    @MockBean
     private UserMapper userMapper;
+
+    @MockBean
+    private CookieUtils cookieUtils;
+
+    @MockBean
+    private UserDetailsService userDetailsService;
 
     @Test
     void shouldReturn201WhenSignupSucceeds() throws Exception {
@@ -169,5 +194,63 @@ class AuthControllerTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.message", containsString("maria@email.com")));
+    }
+
+    @Test
+    void shouldReturn200WhenLoginSucceeds() throws Exception {
+        LoginRequest request = new LoginRequest("joao@email.com", "SenhaForte123");
+        LoginCommand command = new LoginCommand("joao@email.com", "SenhaForte123");
+        TokenPair tokenPair = new TokenPair("access-token", 900);
+        LoginResult loginResult = new LoginResult(tokenPair, "refresh-token");
+        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", "refresh-token")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Strict")
+                .path("/api/v1/auth/refresh")
+                .maxAge(604800)
+                .build();
+
+        given(loginRequestMapper.toCommand(any(LoginRequest.class))).willReturn(command);
+        given(loginUseCase.execute(any(LoginCommand.class))).willReturn(loginResult);
+        given(cookieUtils.buildRefreshTokenCookie("refresh-token")).willReturn(refreshCookie);
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value("Login realizado com sucesso."))
+                .andExpect(jsonPath("$.data.accessToken").value("access-token"))
+                .andExpect(jsonPath("$.data.expiresIn").value(900))
+                .andExpect(jsonPath("$.data.refreshToken").doesNotExist())
+                .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string(HttpHeaders.SET_COOKIE, containsString("refresh_token=refresh-token")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string(HttpHeaders.SET_COOKIE, containsString("HttpOnly")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string(HttpHeaders.SET_COOKIE, containsString("Secure")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string(HttpHeaders.SET_COOKIE, containsString("SameSite=Strict")));
+
+        then(loginRequestMapper).should().toCommand(any(LoginRequest.class));
+        then(loginUseCase).should().execute(any(LoginCommand.class));
+        then(cookieUtils).should().buildRefreshTokenCookie("refresh-token");
+    }
+
+    @Test
+    void shouldReturn401WhenLoginCredentialsAreInvalid() throws Exception {
+        LoginRequest request = new LoginRequest("joao@email.com", "SenhaErrada123");
+        LoginCommand command = new LoginCommand("joao@email.com", "SenhaErrada123");
+
+        given(loginRequestMapper.toCommand(any(LoginRequest.class))).willReturn(command);
+        given(loginUseCase.execute(any(LoginCommand.class))).willThrow(new InvalidCredentialsException());
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.message", containsString("Credenciais invalidas")));
     }
 }

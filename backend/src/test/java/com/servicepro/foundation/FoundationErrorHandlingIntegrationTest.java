@@ -1,5 +1,7 @@
 package com.servicepro.foundation;
 
+import com.servicepro.auth.domain.gateway.RefreshTokenCacheGateway;
+import com.servicepro.auth.domain.gateway.RefreshTokenGateway;
 import com.servicepro.auth.domain.gateway.UserGateway;
 import com.servicepro.shared.domain.exception.NegocioException;
 import com.servicepro.shared.domain.exception.RecursoNaoEncontradoException;
@@ -33,6 +35,12 @@ class FoundationErrorHandlingIntegrationTest {
 
     @MockBean
     private UserGateway userGateway;
+
+    @MockBean
+    private RefreshTokenGateway refreshTokenGateway;
+
+    @MockBean
+    private RefreshTokenCacheGateway refreshTokenCacheGateway;
 
     @Autowired
     private MockMvc mockMvc;

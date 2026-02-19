@@ -5,6 +5,7 @@ import com.servicepro.auth.application.usecase.signup.SignupDomainMapper;
 import com.servicepro.auth.application.usecase.signup.SignupUseCase;
 import com.servicepro.auth.application.usecase.signup.SignupUseCaseImpl;
 import com.servicepro.auth.domain.exception.EmailAlreadyExistsException;
+import com.servicepro.auth.domain.exception.InvalidSignupPasswordException;
 import com.servicepro.auth.domain.exception.InvalidSignupRoleException;
 import com.servicepro.auth.domain.gateway.PasswordHasher;
 import com.servicepro.auth.domain.gateway.UserGateway;
@@ -140,5 +141,23 @@ class SignupUseCaseImplTest {
         assertThatThrownBy(() -> signupUseCase.execute(command))
                 .isInstanceOf(InvalidSignupRoleException.class)
                 .hasMessageContaining("Apenas CLIENT e PROVIDER");
+    }
+
+    @Test
+    void shouldThrowWhenPasswordLengthIsInvalid() {
+        SignupCommand command = new SignupCommand(
+                "Joao Silva",
+                "joao@email.com",
+                "+5511999999999",
+                "1234567",
+                Role.CLIENT
+        );
+
+        assertThatThrownBy(() -> signupUseCase.execute(command))
+                .isInstanceOf(InvalidSignupPasswordException.class)
+                .hasMessageContaining("entre 8 e 72");
+
+        then(userGateway).shouldHaveNoInteractions();
+        then(passwordHasher).shouldHaveNoInteractions();
     }
 }

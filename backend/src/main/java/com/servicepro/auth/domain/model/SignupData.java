@@ -1,11 +1,12 @@
 package com.servicepro.auth.domain.model;
 
+import com.servicepro.auth.domain.exception.InvalidEmailException;
+import com.servicepro.auth.domain.exception.InvalidPhoneException;
 import com.servicepro.auth.domain.exception.InvalidSignupPasswordException;
 import com.servicepro.auth.domain.exception.InvalidSignupRoleException;
 import com.servicepro.auth.domain.exception.InvalidUserNameException;
 import com.servicepro.auth.domain.model.valueobject.Email;
 import com.servicepro.auth.domain.model.valueobject.Phone;
-import java.util.Objects;
 
 public record SignupData(
         String name,
@@ -15,11 +16,21 @@ public record SignupData(
         Role role
 ) {
 
+    private static final int PASSWORD_MIN_LENGTH = 8;
+    private static final int PASSWORD_MAX_LENGTH = 72;
+
     public SignupData {
         name = normalizeName(name);
-        email = Objects.requireNonNull(email, "Email e obrigatorio.");
-        phone = Objects.requireNonNull(phone, "Telefone e obrigatorio.");
+        if (email == null) {
+            throw new InvalidEmailException();
+        }
+        if (phone == null) {
+            throw new InvalidPhoneException();
+        }
         if (password == null || password.isBlank()) {
+            throw new InvalidSignupPasswordException();
+        }
+        if (password.length() < PASSWORD_MIN_LENGTH || password.length() > PASSWORD_MAX_LENGTH) {
             throw new InvalidSignupPasswordException();
         }
         if (role == null) {

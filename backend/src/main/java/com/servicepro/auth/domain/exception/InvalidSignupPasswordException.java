@@ -5,6 +5,6 @@ import com.servicepro.shared.domain.exception.NegocioException;
 public class InvalidSignupPasswordException extends NegocioException {
 
     public InvalidSignupPasswordException() {
-        super("Senha e obrigatoria.");
+        super("Senha deve ter entre 8 e 72 caracteres.");
     }
 }

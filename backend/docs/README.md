@@ -7,5 +7,6 @@ Documentação funcional/técnica do backend.
 - Fonte oficial para testes manuais: `docs/postman/servicepro-backend.postman_collection.json`
 - Sempre que criar ou alterar endpoint:
   - atualizar request/response na collection
-  - manter nomes no padrão: `METHOD /path`
+  - manter nomes curtos de negócio (ex: `Signup Client`, `Login`)
+  - descrever método/path no campo `description` da request
   - incluir exemplos de payload mínimos válidos

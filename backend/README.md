@@ -32,6 +32,9 @@ Backend do ServicePro com Java 25 + Spring Boot 3.5.6, arquitetura DDD (modular 
 2. Suba somente infraestrutura:
    - `docker compose -f docker-compose.local.yml up -d`
 3. Rode a aplicação na IDE com profile `dev`
+4. Portas padrão:
+   - API: `http://localhost:8080`
+   - Actuator/management: `http://localhost:8081`
 
 ## Testes
 
@@ -40,4 +43,7 @@ Backend do ServicePro com Java 25 + Spring Boot 3.5.6, arquitetura DDD (modular 
 ## Documentação de API
 
 - Collection Postman oficial: `docs/postman/servicepro-backend.postman_collection.json`
+- Variáveis da collection:
+  - `baseUrl` para endpoints da API
+  - `managementBaseUrl` para endpoints Actuator
 - Regra: todo novo endpoint deve ser adicionado/atualizado nessa collection.

@@ -1,5 +1,6 @@
 package com.servicepro.shared.interfaces.exception;
 
+import com.servicepro.auth.domain.exception.InvalidCredentialsException;
 import com.servicepro.shared.domain.exception.ConflitoNegocioException;
 import com.servicepro.shared.domain.exception.NegocioException;
 import com.servicepro.shared.domain.exception.RecursoNaoEncontradoException;
@@ -14,6 +15,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class NegocioExceptionHandler extends GlobalExceptionHandler {
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<?> handleInvalidCredentialsException(
+            InvalidCredentialsException exception,
+            HttpServletRequest request
+    ) {
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, exception.getMessage(), request);
+    }
 
     @ExceptionHandler(ConflitoNegocioException.class)
     public ResponseEntity<?> handleConflitoNegocioException(
