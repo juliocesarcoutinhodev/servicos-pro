@@ -158,7 +158,35 @@ jobs:
             mkdir -p "$VPS_APP_DIR"
             cd "$VPS_APP_DIR"
 
+            if [ -z "${PROD_ENV_FILE:-}" ]; then
+              echo "Secret VPS_ENV_PRODUCTION is empty or not configured."
+              exit 1
+            fi
+
             printf '%s' "$PROD_ENV_FILE" > .env.production
+
+            required_vars=(
+              SPRING_PROFILES_ACTIVE
+              SERVER_PORT
+              MANAGEMENT_SERVER_PORT
+              POSTGRES_DB
+              POSTGRES_USER
+              POSTGRES_PASSWORD
+              REDIS_PASSWORD
+              JWT_SECRET
+            )
+
+            missing_vars=()
+            for var_name in "${required_vars[@]}"; do
+              if ! grep -q "^${var_name}=" .env.production; then
+                missing_vars+=("$var_name")
+              fi
+            done
+
+            if [ "${#missing_vars[@]}" -gt 0 ]; then
+              echo "Missing variables in VPS_ENV_PRODUCTION: ${missing_vars[*]}"
+              exit 1
+            fi
 
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
 
