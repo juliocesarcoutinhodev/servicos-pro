@@ -1,0 +1,9 @@
+services:
+  postgres:
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-servicepro}
+      POSTGRES_USER: ${POSTGRES_USER:-servicepro}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-servicepro}
+
+  redis:
+    command: ["redis-server", "--appendonly", "yes"]

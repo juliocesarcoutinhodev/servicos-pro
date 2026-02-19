@@ -1,0 +1,111 @@
+{
+  "info": {
+    "_postman_id": "8f3fa19e-a074-4b64-a2fc-906f5300b72e",
+    "name": "ServicePro Backend API",
+    "description": "Collection oficial do backend ServicePro. Atualize sempre que novos endpoints forem criados.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /actuator/health",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/actuator/health"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "POST /api/v1/auth/signup (CLIENT)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Joao Silva\",\n  \"email\": \"joao@email.com\",\n  \"phone\": \"+5511999999999\",\n  \"password\": \"SenhaForte123\",\n  \"role\": \"CLIENT\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/signup"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/auth/signup (PROVIDER)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Maria Souza\",\n  \"email\": \"maria@email.com\",\n  \"phone\": \"+5511988888888\",\n  \"password\": \"SenhaForte123\",\n  \"role\": \"PROVIDER\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/signup"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

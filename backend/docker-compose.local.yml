@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: servicepro-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-servicepro}
+      POSTGRES_USER: ${POSTGRES_USER:-servicepro}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-servicepro}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-servicepro} -d ${POSTGRES_DB:-servicepro}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:8-alpine
+    container_name: servicepro-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  redis_data:
