@@ -36,6 +36,13 @@ Backend do ServicePro com Java 25 + Spring Boot 3.5.6, arquitetura DDD (modular 
    - API: `http://localhost:8080`
    - Actuator/management: `http://localhost:8081`
 
+## CORS
+
+- Configurado por variáveis de ambiente (`APP_CORS_*`).
+- Em `dev`, defaults permitem `http://localhost:5173`, `http://localhost:3000` e `http://localhost:19006`.
+- Em `staging/prod`, ajuste `APP_CORS_ALLOWED_ORIGINS` para os domínios reais do frontend web.
+- Para mobile React Native nativo, CORS normalmente não se aplica, mas para web/admin no browser se aplica.
+
 ## Testes
 
 - `./mvnw test`
