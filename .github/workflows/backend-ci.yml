@@ -146,24 +146,36 @@ jobs:
           GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           PROD_ENV_FILE: ${{ secrets.VPS_ENV_PRODUCTION }}
+          PROD_ENV_FILE_B64: ${{ secrets.VPS_ENV_PRODUCTION_B64 }}
           VPS_APP_DIR: ${{ secrets.VPS_APP_DIR }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_SSH_PORT }}
-          envs: APP_IMAGE,GHCR_USERNAME,GHCR_TOKEN,PROD_ENV_FILE,VPS_APP_DIR
+          envs: APP_IMAGE,GHCR_USERNAME,GHCR_TOKEN,PROD_ENV_FILE,PROD_ENV_FILE_B64,VPS_APP_DIR
           script: |
             set -euo pipefail
             mkdir -p "$VPS_APP_DIR"
             cd "$VPS_APP_DIR"
 
-            if [ -z "${PROD_ENV_FILE:-}" ]; then
-              echo "Secret VPS_ENV_PRODUCTION is empty or not configured."
+            if [ -n "${PROD_ENV_FILE_B64:-}" ]; then
+              printf '%s' "$PROD_ENV_FILE_B64" | base64 -d > .env.production
+            elif [ -n "${PROD_ENV_FILE:-}" ]; then
+              printf '%s' "$PROD_ENV_FILE" > .env.production
+            else
+              echo "Secret VPS_ENV_PRODUCTION (or VPS_ENV_PRODUCTION_B64) is empty or not configured."
               exit 1
             fi
 
-            printf '%s' "$PROD_ENV_FILE" > .env.production
+            sed -i 's/\r$//' .env.production
+
+            if [ "$(wc -l < .env.production)" -le 1 ] && grep -q '\\n' .env.production; then
+              escaped_content="$(cat .env.production)"
+              printf '%b' "$escaped_content" > .env.production
+            fi
+
+            sed -i -E 's/^[[:space:]]*export[[:space:]]+//' .env.production
 
             required_vars=(
               SPRING_PROFILES_ACTIVE
@@ -178,7 +190,7 @@ jobs:
 
             missing_vars=()
             for var_name in "${required_vars[@]}"; do
-              if ! grep -q "^${var_name}=" .env.production; then
+              if ! grep -Eq "^[[:space:]]*${var_name}=" .env.production; then
                 missing_vars+=("$var_name")
               fi
             done
