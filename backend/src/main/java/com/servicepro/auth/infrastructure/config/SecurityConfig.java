@@ -6,7 +6,10 @@ import com.servicepro.auth.infrastructure.security.AuthRateLimitFilter;
 import com.servicepro.auth.infrastructure.security.JwtAuthenticationFilter;
 import com.servicepro.shared.infrastructure.security.RestAccessDeniedHandler;
 import com.servicepro.shared.infrastructure.security.RestAuthenticationEntryPoint;
+import java.util.Arrays;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -21,6 +24,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 @Configuration
@@ -79,6 +85,45 @@ public class SecurityConfig {
     @Bean
     PasswordEncoder passwordEncoder() {
         return Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
+    }
+
+    @Bean
+    CorsConfigurationSource corsConfigurationSource(
+            @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:3000,http://localhost:19006}") String allowedOrigins,
+            @Value("${app.cors.allowed-origin-patterns:}") String allowedOriginPatterns,
+            @Value("${app.cors.allowed-methods:GET,POST,PUT,PATCH,DELETE,OPTIONS}") String allowedMethods,
+            @Value("${app.cors.allowed-headers:Authorization,Content-Type,X-Requested-With,Origin,Accept}") String allowedHeaders,
+            @Value("${app.cors.exposed-headers:X-RateLimit-Limit,X-RateLimit-Remaining,X-RateLimit-Reset,Retry-After}") String exposedHeaders,
+            @Value("${app.cors.allow-credentials:true}") boolean allowCredentials,
+            @Value("${app.cors.max-age-seconds:3600}") long maxAgeSeconds
+    ) {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(parseCsv(allowedOrigins));
+
+        List<String> originPatterns = parseCsv(allowedOriginPatterns);
+        if (!originPatterns.isEmpty()) {
+            configuration.setAllowedOriginPatterns(originPatterns);
+        }
+
+        configuration.setAllowedMethods(parseCsv(allowedMethods));
+        configuration.setAllowedHeaders(parseCsv(allowedHeaders));
+        configuration.setExposedHeaders(parseCsv(exposedHeaders));
+        configuration.setAllowCredentials(allowCredentials);
+        configuration.setMaxAge(maxAgeSeconds);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
+    private List<String> parseCsv(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(raw.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .toList();
     }
 
     @Bean
