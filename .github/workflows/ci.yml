@@ -4,7 +4,13 @@ on:
   push:
     branches:
       - "**"
+    paths:
+      - "backend/**"
+      - ".github/workflows/ci.yml"
   pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/ci.yml"
   workflow_dispatch:
 
 jobs:
@@ -22,6 +28,7 @@ jobs:
           cache: maven
 
       - name: Lint
+        working-directory: backend
         run: ./mvnw -B -ntp -DskipTests validate
 
   test:
@@ -39,6 +46,7 @@ jobs:
           cache: maven
 
       - name: Test
+        working-directory: backend
         run: ./mvnw -B -ntp test
 
   build:
@@ -56,6 +64,7 @@ jobs:
           cache: maven
 
       - name: Build
+        working-directory: backend
         run: ./mvnw -B -ntp -DskipTests package
 
   docker-push:
@@ -82,8 +91,8 @@ jobs:
       - name: Build and push image
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: ./Dockerfile
+          context: ./backend
+          file: ./backend/Dockerfile
           push: true
           tags: |
             ghcr.io/${{ github.repository_owner }}/servicepro-backend:latest
@@ -116,8 +125,10 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_SSH_PORT }}
-          source: docker-compose.prod.yml
+          source: backend/docker-compose.prod.yml
           target: ${{ secrets.VPS_APP_DIR }}
+          strip_components: 1
+          overwrite: true
 
       - name: Deploy on VPS
         uses: appleboy/ssh-action@v1.2.0
