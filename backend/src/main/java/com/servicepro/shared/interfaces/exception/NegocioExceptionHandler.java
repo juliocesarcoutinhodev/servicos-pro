@@ -1,6 +1,7 @@
 package com.servicepro.shared.interfaces.exception;
 
 import com.servicepro.auth.domain.exception.InvalidCredentialsException;
+import com.servicepro.auth.domain.exception.TokenRevokedException;
 import com.servicepro.shared.domain.exception.ConflitoNegocioException;
 import com.servicepro.shared.domain.exception.NegocioException;
 import com.servicepro.shared.domain.exception.RecursoNaoEncontradoException;
@@ -19,6 +20,14 @@ public class NegocioExceptionHandler extends GlobalExceptionHandler {
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<?> handleInvalidCredentialsException(
             InvalidCredentialsException exception,
+            HttpServletRequest request
+    ) {
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(TokenRevokedException.class)
+    public ResponseEntity<?> handleTokenRevokedException(
+            TokenRevokedException exception,
             HttpServletRequest request
     ) {
         return buildErrorResponse(HttpStatus.UNAUTHORIZED, exception.getMessage(), request);

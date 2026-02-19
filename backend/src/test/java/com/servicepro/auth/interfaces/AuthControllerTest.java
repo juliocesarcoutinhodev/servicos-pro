@@ -5,10 +5,14 @@ import com.servicepro.auth.application.usecase.login.LoginCommand;
 import com.servicepro.auth.application.usecase.login.LoginResult;
 import com.servicepro.auth.application.usecase.login.LoginUseCase;
 import com.servicepro.auth.application.usecase.login.TokenPair;
+import com.servicepro.auth.application.usecase.refresh.RefreshCommand;
+import com.servicepro.auth.application.usecase.refresh.RefreshResult;
+import com.servicepro.auth.application.usecase.refresh.RefreshUseCase;
 import com.servicepro.auth.application.usecase.signup.SignupCommand;
 import com.servicepro.auth.application.usecase.signup.SignupUseCase;
 import com.servicepro.auth.domain.exception.EmailAlreadyExistsException;
 import com.servicepro.auth.domain.exception.InvalidCredentialsException;
+import com.servicepro.auth.domain.exception.TokenRevokedException;
 import com.servicepro.auth.domain.model.Role;
 import com.servicepro.auth.domain.model.User;
 import com.servicepro.auth.infrastructure.config.SecurityConfig;
@@ -26,6 +30,7 @@ import com.servicepro.shared.interfaces.exception.NegocioExceptionHandler;
 import com.servicepro.shared.interfaces.exception.ValidacaoExceptionHandler;
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -69,6 +74,9 @@ class AuthControllerTest {
 
     @MockBean
     private LoginUseCase loginUseCase;
+
+    @MockBean
+    private RefreshUseCase refreshUseCase;
 
     @MockBean
     private SignupRequestMapper signupRequestMapper;
@@ -252,5 +260,45 @@ class AuthControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value(401))
                 .andExpect(jsonPath("$.message", containsString("Credenciais invalidas")));
+    }
+
+    @Test
+    void shouldReturn200WhenRefreshSucceeds() throws Exception {
+        TokenPair tokenPair = new TokenPair("new-access-token", 900L);
+        RefreshResult refreshResult = new RefreshResult(tokenPair, "new-refresh-token");
+        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", "new-refresh-token")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Strict")
+                .path("/api/v1/auth/refresh")
+                .maxAge(604800)
+                .build();
+
+        given(refreshUseCase.execute(any(RefreshCommand.class))).willReturn(refreshResult);
+        given(cookieUtils.buildRefreshTokenCookie("new-refresh-token")).willReturn(refreshCookie);
+
+        mockMvc.perform(post("/api/v1/auth/refresh")
+                        .cookie(new Cookie("refresh_token", "old-refresh-token")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value("Token atualizado com sucesso."))
+                .andExpect(jsonPath("$.data.accessToken").value("new-access-token"))
+                .andExpect(jsonPath("$.data.expiresIn").value(900))
+                .andExpect(jsonPath("$.data.refreshToken").doesNotExist())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string(HttpHeaders.SET_COOKIE, containsString("refresh_token=new-refresh-token")));
+
+        then(refreshUseCase).should().execute(any(RefreshCommand.class));
+        then(cookieUtils).should().buildRefreshTokenCookie("new-refresh-token");
+    }
+
+    @Test
+    void shouldReturn401WhenRefreshTokenIsRevoked() throws Exception {
+        given(refreshUseCase.execute(any(RefreshCommand.class))).willThrow(new TokenRevokedException());
+
+        mockMvc.perform(post("/api/v1/auth/refresh"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.message", containsString("Refresh token invalido")));
     }
 }

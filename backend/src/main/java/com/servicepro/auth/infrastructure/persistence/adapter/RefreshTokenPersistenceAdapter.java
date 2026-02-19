@@ -6,6 +6,7 @@ import com.servicepro.auth.infrastructure.persistence.entity.RefreshTokenJpaEnti
 import com.servicepro.auth.infrastructure.persistence.mapper.RefreshTokenPersistenceMapper;
 import com.servicepro.auth.infrastructure.persistence.repository.RefreshTokenJpaRepository;
 import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -28,5 +29,10 @@ public class RefreshTokenPersistenceAdapter implements RefreshTokenGateway {
     public Optional<RefreshToken> findByTokenHash(String tokenHash) {
         return refreshTokenJpaRepository.findByTokenHash(tokenHash)
                 .map(refreshTokenPersistenceMapper::toDomain);
+    }
+
+    @Override
+    public void revokeAllByUserId(UUID userId) {
+        refreshTokenJpaRepository.revokeAllByUserId(userId);
     }
 }

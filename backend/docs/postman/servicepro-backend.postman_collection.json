@@ -5,6 +5,46 @@
     "description": "Collection oficial do backend ServicePro. Atualize sempre que novos endpoints forem criados.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const runId = pm.collectionVariables.get('runId') || Date.now().toString();",
+          "pm.collectionVariables.set('runId', runId);",
+          "",
+          "if (!pm.collectionVariables.get('clientEmail')) {",
+          "  pm.collectionVariables.set('clientEmail', `cliente.${runId}@email.com`);",
+          "}",
+          "",
+          "if (!pm.collectionVariables.get('providerEmail')) {",
+          "  pm.collectionVariables.set('providerEmail', `prestador.${runId}@email.com`);",
+          "}",
+          "",
+          "if (!pm.collectionVariables.get('clientName')) {",
+          "  pm.collectionVariables.set('clientName', 'Cliente Teste');",
+          "}",
+          "",
+          "if (!pm.collectionVariables.get('providerName')) {",
+          "  pm.collectionVariables.set('providerName', 'Prestador Teste');",
+          "}",
+          "",
+          "if (!pm.collectionVariables.get('clientPhone')) {",
+          "  pm.collectionVariables.set('clientPhone', '+5511999999999');",
+          "}",
+          "",
+          "if (!pm.collectionVariables.get('providerPhone')) {",
+          "  pm.collectionVariables.set('providerPhone', '+5511988888888');",
+          "}",
+          "",
+          "if (!pm.collectionVariables.get('defaultPassword')) {",
+          "  pm.collectionVariables.set('defaultPassword', 'SenhaForte123');",
+          "}"
+        ]
+      }
+    }
+  ],
   "variable": [
     {
       "key": "baseUrl",
@@ -14,6 +54,51 @@
     {
       "key": "managementBaseUrl",
       "value": "http://localhost:8081",
+      "type": "string"
+    },
+    {
+      "key": "runId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "clientName",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "clientEmail",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "clientPhone",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "providerName",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "providerEmail",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "providerPhone",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "defaultPassword",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
       "type": "string"
     }
   ],
@@ -50,7 +135,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status code is 201', function () {",
-                  "    pm.response.to.have.status(201);",
+                  "  pm.response.to.have.status(201);",
                   "});"
                 ]
               }
@@ -70,7 +155,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Joao Silva\",\n  \"email\": \"joao@email.com\",\n  \"phone\": \"+5511999999999\",\n  \"password\": \"SenhaForte123\",\n  \"role\": \"CLIENT\"\n}"
+              "raw": "{\n  \"name\": \"{{clientName}}\",\n  \"email\": \"{{clientEmail}}\",\n  \"phone\": \"{{clientPhone}}\",\n  \"password\": \"{{defaultPassword}}\",\n  \"role\": \"CLIENT\"\n}"
             },
             "description": "POST /api/v1/auth/signup",
             "url": "{{baseUrl}}/api/v1/auth/signup"
@@ -86,7 +171,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status code is 201', function () {",
-                  "    pm.response.to.have.status(201);",
+                  "  pm.response.to.have.status(201);",
                   "});"
                 ]
               }
@@ -106,7 +191,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Maria Souza\",\n  \"email\": \"maria@email.com\",\n  \"phone\": \"+5511988888888\",\n  \"password\": \"SenhaForte123\",\n  \"role\": \"PROVIDER\"\n}"
+              "raw": "{\n  \"name\": \"{{providerName}}\",\n  \"email\": \"{{providerEmail}}\",\n  \"phone\": \"{{providerPhone}}\",\n  \"password\": \"{{defaultPassword}}\",\n  \"role\": \"PROVIDER\"\n}"
             },
             "description": "POST /api/v1/auth/signup",
             "url": "{{baseUrl}}/api/v1/auth/signup"
@@ -114,7 +199,7 @@
           "response": []
         },
         {
-          "name": "Login",
+          "name": "Login Client",
           "event": [
             {
               "listen": "test",
@@ -122,11 +207,15 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
+                  "  pm.response.to.have.status(200);",
                   "});",
                   "pm.test('Has refresh token cookie', function () {",
-                  "    pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(true);",
-                  "});"
+                  "  pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(true);",
+                  "});",
+                  "const data = pm.response.json()?.data;",
+                  "if (data?.accessToken) {",
+                  "  pm.collectionVariables.set('accessToken', data.accessToken);",
+                  "}"
                 ]
               }
             }
@@ -145,10 +234,45 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"joao@email.com\",\n  \"password\": \"SenhaForte123\"\n}"
+              "raw": "{\n  \"email\": \"{{clientEmail}}\",\n  \"password\": \"{{defaultPassword}}\"\n}"
             },
             "description": "POST /api/v1/auth/login",
             "url": "{{baseUrl}}/api/v1/auth/login"
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Has refresh token cookie', function () {",
+                  "  pm.expect(pm.response.headers.has('Set-Cookie')).to.eql(true);",
+                  "});",
+                  "const data = pm.response.json()?.data;",
+                  "if (data?.accessToken) {",
+                  "  pm.collectionVariables.set('accessToken', data.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "POST /api/v1/auth/refresh (cookie-only)",
+            "url": "{{baseUrl}}/api/v1/auth/refresh"
           },
           "response": []
         }

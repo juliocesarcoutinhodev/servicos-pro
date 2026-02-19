@@ -4,6 +4,9 @@ import com.servicepro.auth.application.usecase.login.LoginCommand;
 import com.servicepro.auth.application.usecase.login.LoginResult;
 import com.servicepro.auth.application.usecase.login.LoginUseCase;
 import com.servicepro.auth.application.usecase.login.TokenPair;
+import com.servicepro.auth.application.usecase.refresh.RefreshCommand;
+import com.servicepro.auth.application.usecase.refresh.RefreshResult;
+import com.servicepro.auth.application.usecase.refresh.RefreshUseCase;
 import com.servicepro.auth.application.usecase.signup.SignupCommand;
 import com.servicepro.auth.application.usecase.signup.SignupUseCase;
 import com.servicepro.auth.infrastructure.security.CookieUtils;
@@ -22,6 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,6 +39,7 @@ public class AuthController {
 
     private final SignupUseCase signupUseCase;
     private final LoginUseCase loginUseCase;
+    private final RefreshUseCase refreshUseCase;
     private final SignupRequestMapper signupRequestMapper;
     private final LoginRequestMapper loginRequestMapper;
     private final UserMapper userMapper;
@@ -63,5 +68,19 @@ public class AuthController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
                 .body(ApiResponse.of(HttpStatus.OK, "Login realizado com sucesso.", result.tokenPair()));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<TokenPair>> refresh(
+            @CookieValue(name = CookieUtils.REFRESH_COOKIE_NAME, required = false) String refreshToken
+    ) {
+        log.info("Refresh token request received.");
+
+        RefreshResult result = refreshUseCase.execute(new RefreshCommand(refreshToken));
+        ResponseCookie refreshCookie = cookieUtils.buildRefreshTokenCookie(result.refreshToken());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .body(ApiResponse.of(HttpStatus.OK, "Token atualizado com sucesso.", result.tokenPair()));
     }
 }

@@ -7,6 +7,7 @@ import com.servicepro.auth.infrastructure.persistence.entity.UserJpaEntity;
 import com.servicepro.auth.infrastructure.persistence.mapper.UserPersistenceMapper;
 import com.servicepro.auth.infrastructure.persistence.repository.UserJpaRepository;
 import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
@@ -26,6 +27,12 @@ public class UserPersistenceAdapter implements UserGateway {
     @Override
     public Optional<User> findByEmail(String email) {
         return userJpaRepository.findByEmailIgnoreCase(email)
+                .map(userPersistenceMapper::toDomain);
+    }
+
+    @Override
+    public Optional<User> findById(UUID id) {
+        return userJpaRepository.findById(id)
                 .map(userPersistenceMapper::toDomain);
     }
 

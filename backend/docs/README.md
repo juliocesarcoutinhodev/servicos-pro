@@ -10,3 +10,5 @@ Documentação funcional/técnica do backend.
   - manter nomes curtos de negócio (ex: `Signup Client`, `Login`)
   - descrever método/path no campo `description` da request
   - incluir exemplos de payload mínimos válidos
+  - preferir variáveis de collection (`{{...}}`) em vez de valores fixos
+  - manter scripts de `test` para salvar tokens/valores dinâmicos quando aplicável
