@@ -23,4 +23,14 @@ public class CookieUtils {
                 .maxAge(tokenGateway.refreshTokenTtlSeconds())
                 .build();
     }
+
+    public ResponseCookie buildClearRefreshTokenCookie() {
+        return ResponseCookie.from(REFRESH_COOKIE_NAME, "")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Strict")
+                .path(REFRESH_COOKIE_PATH)
+                .maxAge(0)
+                .build();
+    }
 }

@@ -5,6 +5,10 @@ import com.servicepro.auth.application.usecase.login.LoginCommand;
 import com.servicepro.auth.application.usecase.login.LoginResult;
 import com.servicepro.auth.application.usecase.login.LoginUseCase;
 import com.servicepro.auth.application.usecase.login.TokenPair;
+import com.servicepro.auth.application.usecase.logout.LogoutCommand;
+import com.servicepro.auth.application.usecase.logout.LogoutUseCase;
+import com.servicepro.auth.application.usecase.me.GetCurrentUserCommand;
+import com.servicepro.auth.application.usecase.me.GetCurrentUserUseCase;
 import com.servicepro.auth.application.usecase.refresh.RefreshCommand;
 import com.servicepro.auth.application.usecase.refresh.RefreshResult;
 import com.servicepro.auth.application.usecase.refresh.RefreshUseCase;
@@ -13,6 +17,8 @@ import com.servicepro.auth.application.usecase.signup.SignupUseCase;
 import com.servicepro.auth.domain.exception.EmailAlreadyExistsException;
 import com.servicepro.auth.domain.exception.InvalidCredentialsException;
 import com.servicepro.auth.domain.exception.TokenRevokedException;
+import com.servicepro.auth.domain.gateway.TokenGateway;
+import com.servicepro.auth.domain.model.AccessTokenClaims;
 import com.servicepro.auth.domain.model.Role;
 import com.servicepro.auth.domain.model.User;
 import com.servicepro.auth.infrastructure.config.SecurityConfig;
@@ -28,9 +34,10 @@ import com.servicepro.shared.infrastructure.security.RestAuthenticationEntryPoin
 import com.servicepro.shared.interfaces.exception.GenericExceptionHandler;
 import com.servicepro.shared.interfaces.exception.NegocioExceptionHandler;
 import com.servicepro.shared.interfaces.exception.ValidacaoExceptionHandler;
+import jakarta.servlet.http.Cookie;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.UUID;
-import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -47,6 +54,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -62,6 +70,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 @ActiveProfiles("test")
 class AuthControllerTest {
+
+    private static final String CLIENT_TOKEN = "client-token";
+    private static final String ADMIN_TOKEN = "admin-token";
 
     @Autowired
     private MockMvc mockMvc;
@@ -79,6 +90,12 @@ class AuthControllerTest {
     private RefreshUseCase refreshUseCase;
 
     @MockBean
+    private GetCurrentUserUseCase getCurrentUserUseCase;
+
+    @MockBean
+    private LogoutUseCase logoutUseCase;
+
+    @MockBean
     private SignupRequestMapper signupRequestMapper;
 
     @MockBean
@@ -86,6 +103,9 @@ class AuthControllerTest {
 
     @MockBean
     private UserMapper userMapper;
+
+    @MockBean
+    private TokenGateway tokenGateway;
 
     @MockBean
     private CookieUtils cookieUtils;
@@ -123,15 +143,7 @@ class AuthControllerTest {
                 OffsetDateTime.now()
         );
 
-        UserResponse response = new UserResponse(
-                domainUser.getId(),
-                domainUser.getName(),
-                domainUser.getEmail(),
-                domainUser.getPhone(),
-                domainUser.getRole(),
-                domainUser.getCreatedAt(),
-                domainUser.isActive()
-        );
+        UserResponse response = toUserResponse(domainUser);
 
         given(signupRequestMapper.toCommand(any(SignupRequest.class))).willReturn(command);
         given(signupUseCase.execute(any(SignupCommand.class))).willReturn(domainUser);
@@ -300,5 +312,185 @@ class AuthControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value(401))
                 .andExpect(jsonPath("$.message", containsString("Refresh token invalido")));
+    }
+
+    @Test
+    void shouldReturn200WhenMeSucceeds() throws Exception {
+        UUID userId = UUID.randomUUID();
+        User user = User.restore(
+                userId,
+                "Julio",
+                "julio@email.com",
+                "+5511999999999",
+                "hash",
+                Role.CLIENT,
+                true,
+                OffsetDateTime.now(),
+                OffsetDateTime.now()
+        );
+        UserResponse response = toUserResponse(user);
+
+        mockAuthenticatedToken(CLIENT_TOKEN, userId, "julio@email.com", Role.CLIENT);
+        given(getCurrentUserUseCase.execute(any(GetCurrentUserCommand.class))).willReturn(user);
+        given(userMapper.toUserResponse(user)).willReturn(response);
+
+        mockMvc.perform(get("/api/v1/auth/me")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(CLIENT_TOKEN)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value("Perfil carregado com sucesso."))
+                .andExpect(jsonPath("$.data.id").value(userId.toString()))
+                .andExpect(jsonPath("$.data.email").value("julio@email.com"))
+                .andExpect(jsonPath("$.data.role").value("CLIENT"));
+
+        then(getCurrentUserUseCase).should().execute(any(GetCurrentUserCommand.class));
+    }
+
+    @Test
+    void shouldReturn401WhenMeIsUnauthenticated() throws Exception {
+        mockMvc.perform(get("/api/v1/auth/me"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401));
+    }
+
+    @Test
+    void shouldReturn403WhenAdminMeIsRequestedByNonAdmin() throws Exception {
+        mockAuthenticatedToken(CLIENT_TOKEN, UUID.randomUUID(), "cliente@email.com", Role.CLIENT);
+
+        mockMvc.perform(get("/api/v1/auth/admin/me")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(CLIENT_TOKEN)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(403));
+    }
+
+    @Test
+    void shouldReturn200WhenAdminMeIsRequestedByAdmin() throws Exception {
+        UUID adminId = UUID.randomUUID();
+        User admin = User.restore(
+                adminId,
+                "Admin",
+                "admin@email.com",
+                "+5511911111111",
+                "hash",
+                Role.ADMIN,
+                true,
+                OffsetDateTime.now(),
+                OffsetDateTime.now()
+        );
+        UserResponse response = toUserResponse(admin);
+
+        mockAuthenticatedToken(ADMIN_TOKEN, adminId, "admin@email.com", Role.ADMIN);
+        given(getCurrentUserUseCase.execute(any(GetCurrentUserCommand.class))).willReturn(admin);
+        given(userMapper.toUserResponse(admin)).willReturn(response);
+
+        mockMvc.perform(get("/api/v1/auth/admin/me")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(ADMIN_TOKEN)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value("Perfil admin carregado com sucesso."))
+                .andExpect(jsonPath("$.data.id").value(adminId.toString()))
+                .andExpect(jsonPath("$.data.role").value("ADMIN"));
+    }
+
+    @Test
+    void shouldReturn204AndClearCookieWhenLogoutHasRefreshToken() throws Exception {
+        ResponseCookie clearCookie = ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Strict")
+                .path("/api/v1/auth/refresh")
+                .maxAge(0)
+                .build();
+
+        mockAuthenticatedToken(CLIENT_TOKEN, UUID.randomUUID(), "cliente@email.com", Role.CLIENT);
+        given(cookieUtils.buildClearRefreshTokenCookie()).willReturn(clearCookie);
+
+        mockMvc.perform(post("/api/v1/auth/logout")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(CLIENT_TOKEN))
+                        .cookie(new Cookie("refresh_token", "refresh-token")))
+                .andExpect(status().isNoContent())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string(HttpHeaders.SET_COOKIE, containsString("refresh_token=")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string(HttpHeaders.SET_COOKIE, containsString("Max-Age=0")));
+
+        then(logoutUseCase).should().execute(any(LogoutCommand.class));
+        then(cookieUtils).should().buildClearRefreshTokenCookie();
+    }
+
+    @Test
+    void shouldReturn204AndClearCookieWhenLogoutHasNoCookieAndNoAuthentication() throws Exception {
+        ResponseCookie clearCookie = ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Strict")
+                .path("/api/v1/auth/refresh")
+                .maxAge(0)
+                .build();
+
+        given(cookieUtils.buildClearRefreshTokenCookie()).willReturn(clearCookie);
+
+        mockMvc.perform(post("/api/v1/auth/logout"))
+                .andExpect(status().isNoContent())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string(HttpHeaders.SET_COOKIE, containsString("refresh_token=")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string(HttpHeaders.SET_COOKIE, containsString("Max-Age=0")));
+
+        then(logoutUseCase).should().execute(any(LogoutCommand.class));
+        then(cookieUtils).should().buildClearRefreshTokenCookie();
+    }
+
+    @Test
+    void shouldReturn204WhenLogoutHasRefreshTokenAndNoAuthentication() throws Exception {
+        ResponseCookie clearCookie = ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Strict")
+                .path("/api/v1/auth/refresh")
+                .maxAge(0)
+                .build();
+
+        given(cookieUtils.buildClearRefreshTokenCookie()).willReturn(clearCookie);
+
+        mockMvc.perform(post("/api/v1/auth/logout")
+                        .cookie(new Cookie("refresh_token", "refresh-token")))
+                .andExpect(status().isNoContent())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string(HttpHeaders.SET_COOKIE, containsString("refresh_token=")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string(HttpHeaders.SET_COOKIE, containsString("Max-Age=0")));
+
+        then(logoutUseCase).should().execute(any(LogoutCommand.class));
+        then(cookieUtils).should().buildClearRefreshTokenCookie();
+    }
+
+    private void mockAuthenticatedToken(String rawToken, UUID userId, String email, Role role) {
+        AccessTokenClaims claims = new AccessTokenClaims(
+                userId,
+                email,
+                role,
+                UUID.randomUUID().toString(),
+                Instant.now(),
+                Instant.now().plusSeconds(900)
+        );
+        given(tokenGateway.validateToken(rawToken)).willReturn(true);
+        given(tokenGateway.extractClaims(rawToken)).willReturn(claims);
+    }
+
+    private String bearer(String rawToken) {
+        return "Bearer " + rawToken;
+    }
+
+    private UserResponse toUserResponse(User user) {
+        return new UserResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getPhone(),
+                user.getRole(),
+                user.getCreatedAt(),
+                user.isActive()
+        );
     }
 }

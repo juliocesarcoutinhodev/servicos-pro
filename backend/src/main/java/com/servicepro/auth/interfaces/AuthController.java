@@ -4,12 +4,18 @@ import com.servicepro.auth.application.usecase.login.LoginCommand;
 import com.servicepro.auth.application.usecase.login.LoginResult;
 import com.servicepro.auth.application.usecase.login.LoginUseCase;
 import com.servicepro.auth.application.usecase.login.TokenPair;
+import com.servicepro.auth.application.usecase.me.GetCurrentUserCommand;
+import com.servicepro.auth.application.usecase.me.GetCurrentUserUseCase;
+import com.servicepro.auth.application.usecase.logout.LogoutCommand;
+import com.servicepro.auth.application.usecase.logout.LogoutUseCase;
 import com.servicepro.auth.application.usecase.refresh.RefreshCommand;
 import com.servicepro.auth.application.usecase.refresh.RefreshResult;
 import com.servicepro.auth.application.usecase.refresh.RefreshUseCase;
 import com.servicepro.auth.application.usecase.signup.SignupCommand;
 import com.servicepro.auth.application.usecase.signup.SignupUseCase;
+import com.servicepro.auth.domain.exception.InvalidCredentialsException;
 import com.servicepro.auth.infrastructure.security.CookieUtils;
+import com.servicepro.auth.infrastructure.security.AuthenticatedUserPrincipal;
 import com.servicepro.auth.interfaces.dto.LoginRequest;
 import com.servicepro.auth.domain.model.User;
 import com.servicepro.auth.interfaces.dto.SignupRequest;
@@ -25,7 +31,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -40,6 +49,8 @@ public class AuthController {
     private final SignupUseCase signupUseCase;
     private final LoginUseCase loginUseCase;
     private final RefreshUseCase refreshUseCase;
+    private final GetCurrentUserUseCase getCurrentUserUseCase;
+    private final LogoutUseCase logoutUseCase;
     private final SignupRequestMapper signupRequestMapper;
     private final LoginRequestMapper loginRequestMapper;
     private final UserMapper userMapper;
@@ -82,5 +93,39 @@ public class AuthController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
                 .body(ApiResponse.of(HttpStatus.OK, "Token atualizado com sucesso.", result.tokenPair()));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserResponse>> me(Authentication authentication) {
+        return ResponseEntity.ok(ApiResponse.of(HttpStatus.OK, "Perfil carregado com sucesso.", currentUserResponse(authentication)));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/admin/me")
+    public ResponseEntity<ApiResponse<UserResponse>> adminMe(Authentication authentication) {
+        return ResponseEntity.ok(ApiResponse.of(HttpStatus.OK, "Perfil admin carregado com sucesso.", currentUserResponse(authentication)));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(
+            @CookieValue(name = CookieUtils.REFRESH_COOKIE_NAME, required = false) String refreshToken
+    ) {
+        log.info("Logout request received.");
+
+        logoutUseCase.execute(new LogoutCommand(refreshToken));
+        ResponseCookie clearRefreshCookie = cookieUtils.buildClearRefreshTokenCookie();
+
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, clearRefreshCookie.toString())
+                .build();
+    }
+
+    private UserResponse currentUserResponse(Authentication authentication) {
+        if (authentication == null || !(authentication.getPrincipal() instanceof AuthenticatedUserPrincipal principal)) {
+            throw new InvalidCredentialsException();
+        }
+
+        User user = getCurrentUserUseCase.execute(new GetCurrentUserCommand(principal.userId()));
+        return userMapper.toUserResponse(user);
     }
 }
