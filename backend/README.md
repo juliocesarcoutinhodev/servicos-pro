@@ -49,7 +49,9 @@ Backend do ServicePro com Java 25 + Spring Boot 3.5.6, arquitetura DDD (modular 
 
 ## Documentação de API
 
-- Collection Postman oficial: `docs/postman/servicepro-backend.postman_collection.json`
+- Collections Postman oficiais:
+  - `docs/postman/servicepro-backend.local.postman_collection.json`
+  - `docs/postman/servicepro-backend.prod.postman_collection.json`
 - Variáveis da collection:
   - `baseUrl` para endpoints da API
   - `managementBaseUrl` para endpoints Actuator
@@ -57,7 +59,7 @@ Backend do ServicePro com Java 25 + Spring Boot 3.5.6, arquitetura DDD (modular 
 
 ## Deploy em VPS Ubuntu (GitHub Actions)
 
-O pipeline em `.github/workflows/ci.yml` faz:
+O pipeline em `.github/workflows/backend-ci.yml` faz:
 
 1. lint
 2. test
@@ -80,6 +82,7 @@ O pipeline em `.github/workflows/ci.yml` faz:
 - `GHCR_USERNAME`: usuário com acesso ao pacote no GHCR
 - `GHCR_TOKEN`: token com permissão de leitura de pacotes (`read:packages`)
 - `VPS_ENV_PRODUCTION`: conteúdo completo do `.env.production` (multi-line)
+- `VPS_ENV_PRODUCTION_B64`: alternativa em Base64 para o `.env.production`
 
 ### Bootstrap inicial da VPS (uma vez)
 

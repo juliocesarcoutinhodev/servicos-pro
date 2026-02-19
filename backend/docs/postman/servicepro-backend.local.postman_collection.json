@@ -1,7 +1,7 @@
 {
   "info": {
-    "_postman_id": "8f3fa19e-a074-4b64-a2fc-906f5300b72e",
-    "name": "ServicePro Backend API",
+    "_postman_id": "4d5af1e0-2de2-4c4d-97c6-19309a4d0ec6",
+    "name": "ServicePro Backend API - Local",
     "description": "Collection oficial do backend ServicePro. Atualize sempre que novos endpoints forem criados.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
