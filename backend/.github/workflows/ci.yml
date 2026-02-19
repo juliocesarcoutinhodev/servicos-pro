@@ -5,6 +5,7 @@ on:
     branches:
       - "**"
   pull_request:
+  workflow_dispatch:
 
 jobs:
   lint:
@@ -87,3 +88,60 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/servicepro-backend:latest
             ghcr.io/${{ github.repository_owner }}/servicepro-backend:${{ github.sha }}
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: docker-push
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare VPS directory
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT }}
+          script: |
+            set -euo pipefail
+            mkdir -p "${{ secrets.VPS_APP_DIR }}"
+
+      - name: Upload production compose file to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT }}
+          source: docker-compose.prod.yml
+          target: ${{ secrets.VPS_APP_DIR }}
+
+      - name: Deploy on VPS
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          APP_IMAGE: ghcr.io/${{ github.repository_owner }}/servicepro-backend:${{ github.sha }}
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          PROD_ENV_FILE: ${{ secrets.VPS_ENV_PRODUCTION }}
+          VPS_APP_DIR: ${{ secrets.VPS_APP_DIR }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT }}
+          envs: APP_IMAGE,GHCR_USERNAME,GHCR_TOKEN,PROD_ENV_FILE,VPS_APP_DIR
+          script: |
+            set -euo pipefail
+            mkdir -p "$VPS_APP_DIR"
+            cd "$VPS_APP_DIR"
+
+            printf '%s' "$PROD_ENV_FILE" > .env.production
+
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+
+            APP_IMAGE="$APP_IMAGE" docker compose --env-file .env.production -f docker-compose.prod.yml pull app
+            APP_IMAGE="$APP_IMAGE" docker compose --env-file .env.production -f docker-compose.prod.yml up -d --remove-orphans
+            docker image prune -af --filter "until=72h"
