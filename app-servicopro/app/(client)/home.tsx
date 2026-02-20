@@ -1,3 +1,4 @@
+import { useAuth } from "@/context/AuthContext";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
@@ -36,6 +37,8 @@ const categories = [
 
 export default function ClientHomeScreen() {
   const router = useRouter();
+  const { user } = useAuth();
+  const firstName = user?.name?.split(" ")[0] ?? "Olá";
 
   return (
     <View className="flex-1 bg-[#F8FAFC]">
@@ -49,9 +52,12 @@ export default function ClientHomeScreen() {
           <View className="flex-row items-center justify-between mb-6">
             <View>
               <Text className="text-blue-100 mb-1">Olá,</Text>
-              <Text className="text-white text-2xl font-bold">Maria Silva</Text>
+              <Text className="text-white text-2xl font-bold">{firstName}</Text>
             </View>
-            <TouchableOpacity className="w-12 h-12 rounded-full bg-white/20 items-center justify-center">
+            <TouchableOpacity
+              onPress={() => router.push("/(client)/profile")}
+              className="w-12 h-12 rounded-full bg-white/20 items-center justify-center"
+            >
               <User size={24} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
@@ -165,7 +171,10 @@ export default function ClientHomeScreen() {
                 <Wrench size={24} color="#64748B" />
                 <Text className="text-xs text-[#64748B]">Serviços</Text>
               </TouchableOpacity>
-              <TouchableOpacity className="items-center gap-1">
+              <TouchableOpacity
+                onPress={() => router.push("/(client)/profile")}
+                className="items-center gap-1"
+              >
                 <User size={24} color="#64748B" />
                 <Text className="text-xs text-[#64748B]">Perfil</Text>
               </TouchableOpacity>

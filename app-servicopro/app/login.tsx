@@ -1,10 +1,13 @@
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { useAuth } from "@/context/AuthContext";
+import { extractApiError } from "@/utils/apiError";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { Briefcase, User } from "lucide-react-native";
 import React, { useEffect, useRef, useState } from "react";
 import {
+  Alert,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -15,59 +18,79 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-type UserType = "client" | "provider" | null;
+type UserType = "client" | "provider";
 
+/**
+ * Login screen — authenticates via POST /api/v1/auth/login.
+ * On success, AuthContext persists the access token and the
+ * route guard redirects the user to the appropriate home screen.
+ */
 export default function LoginScreen() {
   const router = useRouter();
+  const { signIn, isLoading: authLoading } = useAuth();
   const scrollViewRef = useRef<ScrollView>(null);
-  const [selectedUserType, setSelectedUserType] = useState<UserType>(null);
-  const [email, setEmail] = useState("");
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
-  const handleUserTypeSelect = (type: "client" | "provider") => {
+  const [selectedUserType, setSelectedUserType] = useState<UserType | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [errors, setErrors] = useState<{
+    email?: string;
+    password?: string;
+    general?: string;
+  }>({});
+
+  const handleUserTypeSelect = (type: UserType) => {
     setSelectedUserType(type);
-    // Preenche email de exemplo baseado no tipo
-    if (type === "client") {
-      setEmail("cliente@servicopro.com");
-    } else {
-      setEmail("prestador@servicopro.com");
-    }
+    setErrors({});
   };
 
-  const handleLogin = () => {
-    if (selectedUserType === "client") {
-      router.push("/(client)/home");
-    } else if (selectedUserType === "provider") {
-      router.push("/(provider)/home");
+  function validate(): boolean {
+    const newErrors: typeof errors = {};
+    if (!email.trim()) {
+      newErrors.email = "Informe seu email";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      newErrors.email = "Email inválido";
+    }
+    if (!password) {
+      newErrors.password = "Informe sua senha";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }
+
+  const handleLogin = async () => {
+    if (!selectedUserType) {
+      Alert.alert("Atenção", "Selecione o tipo de acesso antes de continuar.");
+      return;
+    }
+    if (!validate()) return;
+
+    setIsSubmitting(true);
+    setErrors({});
+    try {
+      await signIn({ email: email.trim(), password });
+      // Navigation handled automatically by the route guard in AuthContext
+    } catch (err) {
+      setErrors({ general: extractApiError(err) });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      "keyboardDidShow",
-      () => {
-        setIsKeyboardVisible(true);
-        // Scroll para o final quando o teclado aparecer
-        setTimeout(() => {
-          scrollViewRef.current?.scrollToEnd({ animated: true });
-        }, 200);
-      }
-    );
-
-    const keyboardDidHideListener = Keyboard.addListener(
-      "keyboardDidHide",
-      () => {
-        setIsKeyboardVisible(false);
-        // Scroll de volta para o topo quando o teclado desaparecer
-        setTimeout(() => {
-          scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-        }, 100);
-      }
-    );
-
+    const show = Keyboard.addListener("keyboardDidShow", () => {
+      setIsKeyboardVisible(true);
+      setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 200);
+    });
+    const hide = Keyboard.addListener("keyboardDidHide", () => {
+      setIsKeyboardVisible(false);
+      setTimeout(() => scrollViewRef.current?.scrollTo({ y: 0, animated: true }), 100);
+    });
     return () => {
-      keyboardDidShowListener.remove();
-      keyboardDidHideListener.remove();
+      show.remove();
+      hide.remove();
     };
   }, []);
 
@@ -187,29 +210,46 @@ export default function LoginScreen() {
             {/* Input Fields */}
             <View className="mb-6">
               <Input
-                label="Email ou telefone"
-                placeholder="Digite seu email ou telefone"
+                label="Email"
+                placeholder="Digite seu email"
                 keyboardType="email-address"
                 autoCapitalize="none"
+                autoComplete="email"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(v) => {
+                  setEmail(v);
+                  if (errors.email) setErrors((e) => ({ ...e, email: undefined }));
+                }}
+                error={errors.email}
               />
               <Input
                 label="Senha"
                 placeholder="Digite sua senha"
                 secureTextEntry
                 showPasswordToggle
+                value={password}
+                onChangeText={(v) => {
+                  setPassword(v);
+                  if (errors.password) setErrors((e) => ({ ...e, password: undefined }));
+                }}
+                error={errors.password}
                 onFocus={() => {
-                  // Scroll para o campo de senha quando receber foco
-                  setTimeout(() => {
-                    scrollViewRef.current?.scrollToEnd({ animated: true });
-                  }, 200);
+                  setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 200);
                 }}
               />
             </View>
 
+            {/* General API error */}
+            {errors.general && (
+              <View className="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-200">
+                <Text className="text-red-700 text-sm text-center">
+                  {errors.general}
+                </Text>
+              </View>
+            )}
+
             {/* User Type Indicator */}
-            {selectedUserType && (
+            {selectedUserType && !errors.general && (
               <View className="mb-4 px-4 py-3 rounded-xl bg-blue-50 border border-blue-200">
                 <Text className="text-blue-800 text-sm text-center">
                   {selectedUserType === "client"
@@ -225,7 +265,8 @@ export default function LoginScreen() {
               size="lg"
               fullWidth
               className="mb-4"
-              disabled={!selectedUserType}
+              disabled={!selectedUserType || isSubmitting || authLoading}
+              loading={isSubmitting}
             >
               Entrar
             </Button>
@@ -246,3 +287,4 @@ export default function LoginScreen() {
     </SafeAreaView>
   );
 }
+

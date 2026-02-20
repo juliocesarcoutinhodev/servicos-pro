@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { useAuth } from "@/context/AuthContext";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
@@ -49,7 +50,9 @@ const recentRequests = [
 
 export default function ProviderHomeScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const [isAvailable, setIsAvailable] = useState(true);
+  const firstName = user?.name?.split(" ")[0] ?? "Prestador";
 
   return (
     <View className="flex-1 bg-[#F8FAFC]">
@@ -63,7 +66,7 @@ export default function ProviderHomeScreen() {
           <View className="flex-row items-center justify-between mb-6">
             <View>
               <Text className="text-blue-100 mb-1">Bem-vindo,</Text>
-              <Text className="text-white text-2xl font-bold">João Santos</Text>
+              <Text className="text-white text-2xl font-bold">{firstName}</Text>
             </View>
             <TouchableOpacity
               onPress={() => router.push("/(provider)/profile")}
