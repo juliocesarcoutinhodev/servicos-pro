@@ -55,7 +55,7 @@ export interface Service {
   active?: boolean;
 }
 
-// Category Types
+// Category Types (legacy UI mock — kept for client-side display mapping)
 export interface Category {
   id: string;
   name: string;
@@ -63,6 +63,73 @@ export interface Category {
   color: string;
   count: number;
   description: string;
+}
+
+// ── Backend-aligned types ────────────────────────────────────────────────────
+
+/** Mirrors GET /api/v1/services/categories response item */
+export interface ServiceCategory {
+  id: string;
+  name: string;
+  description: string;
+}
+
+/** Mirrors POST /api/v1/services/categories request body */
+export interface CreateServiceCategoryRequest {
+  name: string;
+  description: string;
+}
+
+/** Mirrors POST /api/v1/providers/services request body */
+export interface CreateProviderServiceRequest {
+  categoryId: string;
+  name: string;
+  description: string;
+  /** Price in cents (e.g. 15000 = R$ 150,00) */
+  priceCents: number;
+}
+
+/** Mirrors PUT /api/v1/providers/services/{id} request body */
+export interface UpdateProviderServiceRequest {
+  categoryId: string;
+  name: string;
+  description: string;
+  priceCents: number;
+}
+
+/** Mirrors the provider service item returned by the backend */
+export interface ProviderService {
+  id: string;
+  name: string;
+  description: string;
+  priceCents: number;
+  /** Backend returns categoryId as a flat field — no nested object */
+  categoryId: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+  /** Resolved client-side by cross-referencing the categories list */
+  category?: ServiceCategory | null;
+}
+
+/** Provider summary returned by GET /api/v1/providers */
+export interface ProviderSummary {
+  id: string;
+  name: string;
+  /** Category names the provider offers services in */
+  categoryNames: string[];
+  averageRating: number | null;
+  totalReviews: number;
+  active: boolean;
+  serviceCount: number;
+}
+
+/** Paginated response wrapper */
+export interface Page<T> {
+  content: T[];
+  totalElements: number;
+  page: number;
+  size: number;
 }
 
 // Request Types

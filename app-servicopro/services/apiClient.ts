@@ -8,6 +8,15 @@ import {
   ResetPasswordRequest,
   SignupRequest,
 } from "@/types/auth";
+import {
+  CreateProviderServiceRequest,
+  CreateServiceCategoryRequest,
+  Page,
+  ProviderService,
+  ProviderSummary,
+  ServiceCategory,
+  UpdateProviderServiceRequest,
+} from "@/types";
 import axios, {
   AxiosError,
   AxiosInstance,
@@ -211,6 +220,95 @@ export async function resetPassword(
   payload: ResetPasswordRequest
 ): Promise<void> {
   await apiClient.post("/api/v1/auth/reset-password", payload);
+}
+
+// ── Service Categories ──────────────────────────────────────────────────────
+
+/**
+ * Returns all available service categories (public endpoint).
+ */
+export async function listServiceCategories(): Promise<ServiceCategory[]> {
+  const { data } = await apiClient.get<ApiSuccessResponse<ServiceCategory[]>>(
+    "/api/v1/services/categories"
+  );
+  return data.data;
+}
+
+/**
+ * Creates a new service category (requires authentication).
+ */
+export async function createServiceCategory(
+  payload: CreateServiceCategoryRequest
+): Promise<ServiceCategory> {
+  const { data } = await apiClient.post<ApiSuccessResponse<ServiceCategory>>(
+    "/api/v1/services/categories",
+    payload
+  );
+  return data.data;
+}
+
+// ── Provider Services ───────────────────────────────────────────────────────
+
+/**
+ * Returns the authenticated provider's registered services.
+ */
+export async function listMyProviderServices(): Promise<ProviderService[]> {
+  const { data } = await apiClient.get<ApiSuccessResponse<ProviderService[]>>(
+    "/api/v1/providers/services"
+  );
+  return data.data;
+}
+
+/**
+ * Creates a new service for the authenticated provider.
+ */
+export async function createProviderService(
+  payload: CreateProviderServiceRequest
+): Promise<ProviderService> {
+  const { data } = await apiClient.post<ApiSuccessResponse<ProviderService>>(
+    "/api/v1/providers/services",
+    payload
+  );
+  return data.data;
+}
+
+/**
+ * Updates an existing provider service by id.
+ */
+export async function updateProviderService(
+  id: string,
+  payload: UpdateProviderServiceRequest
+): Promise<ProviderService> {
+  const { data } = await apiClient.put<ApiSuccessResponse<ProviderService>>(
+    `/api/v1/providers/services/${id}`,
+    payload
+  );
+  return data.data;
+}
+
+/**
+ * Deletes a provider service by id.
+ */
+export async function deleteProviderService(id: string): Promise<void> {
+  await apiClient.delete(`/api/v1/providers/services/${id}`);
+}
+
+// ── Public Provider Listing ─────────────────────────────────────────────────
+
+/**
+ * Lists active providers, optionally filtered by categoryId.
+ * Used by the client home screen and professional listing.
+ */
+export async function listProviders(params?: {
+  categoryId?: string;
+  page?: number;
+  size?: number;
+}): Promise<Page<ProviderSummary>> {
+  const { data } = await apiClient.get<ApiSuccessResponse<Page<ProviderSummary>>>(
+    "/api/v1/providers",
+    { params: { page: 0, size: 10, ...params } }
+  );
+  return data.data;
 }
 
 export default apiClient;

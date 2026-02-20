@@ -11,6 +11,9 @@ export default function ProviderLayout() {
       <Stack.Screen name="home" />
       <Stack.Screen name="requests" />
       <Stack.Screen name="profile" />
+      <Stack.Screen name="my-services" />
     </Stack>
   );
 }
+
+

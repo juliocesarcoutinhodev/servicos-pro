@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/Card";
 import { useAuth } from "@/context/AuthContext";
-import { fetchMe } from "@/services/apiClient";
+import { fetchMe, listMyProviderServices } from "@/services/apiClient";
 import { AuthUser } from "@/types/auth";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -9,6 +9,7 @@ import {
   CalendarDays,
   CheckCircle2,
   ChevronLeft,
+  ChevronRight,
   Clock,
   LogOut,
   Mail,
@@ -66,6 +67,7 @@ export default function ProviderProfileScreen() {
   const insets = useSafeAreaInsets();
 
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [serviceCount, setServiceCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,8 +76,12 @@ export default function ProviderProfileScreen() {
     if (!silent) setLoading(true);
     setError(null);
     try {
-      const data = await fetchMe();
+      const [data, services] = await Promise.all([
+        fetchMe(),
+        listMyProviderServices(),
+      ]);
       setUser(data);
+      setServiceCount(services.length);
     } catch {
       setError("Não foi possível carregar o perfil.");
     } finally {
@@ -202,13 +208,27 @@ export default function ProviderProfileScreen() {
 
           {/* Stats */}
           <View className="flex-row gap-4 mb-6">
-            <Card className="flex-1 items-center">
-              <View className="w-10 h-10 rounded-full bg-[#3B82F6]/10 items-center justify-center mb-2">
-                <Award size={20} color="#3B82F6" />
-              </View>
-              <Text className="font-semibold mb-1">—</Text>
-              <Text className="text-[#64748B] text-sm">Serviços</Text>
-            </Card>
+            {/* Serviços — clicável, mostra contagem real */}
+            <TouchableOpacity
+              className="flex-1"
+              activeOpacity={0.8}
+              onPress={() => router.push("/(provider)/my-services")}
+            >
+              <Card className="items-center">
+                <View className="w-10 h-10 rounded-full bg-[#3B82F6]/10 items-center justify-center mb-2">
+                  <Award size={20} color="#3B82F6" />
+                </View>
+                <Text className="font-semibold mb-1">
+                  {serviceCount !== null ? String(serviceCount) : "—"}
+                </Text>
+                <Text className="text-[#64748B] text-sm">Serviços</Text>
+                <View className="flex-row items-center mt-1 gap-0.5">
+                  <Text className="text-[#3B82F6] text-xs">ver</Text>
+                  <ChevronRight size={12} color="#3B82F6" />
+                </View>
+              </Card>
+            </TouchableOpacity>
+
             <Card className="flex-1 items-center">
               <View className="w-10 h-10 rounded-full bg-[#22C55E]/10 items-center justify-center mb-2">
                 <Shield size={20} color="#22C55E" />

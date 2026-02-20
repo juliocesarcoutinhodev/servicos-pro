@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
+  Briefcase,
   Calendar,
   CheckCircle2,
   Clock,
@@ -122,6 +123,30 @@ export default function ProviderHomeScreen() {
           </Card>
         </View>
 
+        {/* Quick Access — Meus Serviços */}
+        <View className="px-6 mt-6">
+          <Text className="text-xl font-bold mb-4">Atalhos</Text>
+          <TouchableOpacity
+            onPress={() => router.push("/(provider)/my-services")}
+            activeOpacity={0.85}
+          >
+            <Card className="flex-row items-center gap-4">
+              <View className="w-12 h-12 rounded-xl bg-[#3B82F6]/10 items-center justify-center">
+                <Briefcase size={24} color="#3B82F6" />
+              </View>
+              <View className="flex-1">
+                <Text className="font-semibold text-[#1E293B] mb-0.5">
+                  Meus Serviços
+                </Text>
+                <Text className="text-[#64748B] text-sm">
+                  Gerencie os serviços que você oferece
+                </Text>
+              </View>
+              <Text className="text-[#3B82F6] text-xl">›</Text>
+            </Card>
+          </TouchableOpacity>
+        </View>
+
         {/* New Requests */}
         <View className="px-6 mt-6">
           <View className="flex-row items-center justify-between mb-4">
@@ -224,9 +249,12 @@ export default function ProviderHomeScreen() {
               <Clock size={24} color="#64748B" />
               <Text className="text-xs text-[#64748B]">Solicitações</Text>
             </TouchableOpacity>
-            <TouchableOpacity className="items-center gap-1">
-              <DollarSign size={24} color="#64748B" />
-              <Text className="text-xs text-[#64748B]">Ganhos</Text>
+            <TouchableOpacity
+              onPress={() => router.push("/(provider)/my-services")}
+              className="items-center gap-1"
+            >
+              <Briefcase size={24} color="#64748B" />
+              <Text className="text-xs text-[#64748B]">Serviços</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => router.push("/(provider)/profile")}
@@ -237,7 +265,7 @@ export default function ProviderHomeScreen() {
             </TouchableOpacity>
           </View>
         </View>
-        </SafeAreaView>
+      </SafeAreaView>
     </View>
   );
 }

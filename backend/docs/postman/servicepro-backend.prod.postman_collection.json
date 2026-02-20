@@ -750,6 +750,39 @@
             "url": "{{baseUrl}}/api/v1/providers/services/{{providerServiceId}}"
           },
           "response": []
+        },
+        {
+          "name": "List Public Providers",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const page = pm.response.json()?.data;",
+                  "const first = page?.content?.[0];",
+                  "if (first?.id) {",
+                  "  pm.collectionVariables.set('publicProviderId', first.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "GET /api/v1/providers?page=0&size=10 (categoryId opcional)",
+            "url": "{{baseUrl}}/api/v1/providers?page=0&size=10"
+          },
+          "response": []
         }
       ]
     }

@@ -19,12 +19,17 @@ import com.servicepro.providers.application.usecase.createproviderservice.Create
 import com.servicepro.providers.application.usecase.createproviderservice.CreateProviderServiceUseCase;
 import com.servicepro.providers.application.usecase.deleteproviderservice.DeleteProviderServiceUseCase;
 import com.servicepro.providers.application.usecase.listproviderservices.ListProviderServicesUseCase;
+import com.servicepro.providers.application.usecase.listproviders.ListProvidersCommand;
+import com.servicepro.providers.application.usecase.listproviders.ListProvidersUseCase;
 import com.servicepro.providers.application.usecase.updateproviderservice.UpdateProviderServiceUseCase;
 import com.servicepro.providers.domain.model.ProviderService;
+import com.servicepro.providers.domain.model.ProviderSummary;
 import com.servicepro.providers.interfaces.dto.CreateProviderServiceRequest;
 import com.servicepro.providers.interfaces.dto.ProviderServiceResponse;
+import com.servicepro.providers.interfaces.dto.ProviderSummaryResponse;
 import com.servicepro.providers.interfaces.mapper.CreateProviderServiceRequestMapper;
 import com.servicepro.providers.interfaces.mapper.ProviderServiceResponseMapper;
+import com.servicepro.providers.interfaces.mapper.ProviderSummaryResponseMapper;
 import com.servicepro.providers.interfaces.mapper.UpdateProviderServiceRequestMapper;
 import com.servicepro.shared.infrastructure.security.RestAccessDeniedHandler;
 import com.servicepro.shared.infrastructure.security.RestAuthenticationEntryPoint;
@@ -43,6 +48,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -54,7 +61,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = {ProviderServiceController.class, ServiceCategoryController.class})
+@WebMvcTest(controllers = {ProviderServiceController.class, ProviderController.class, ServiceCategoryController.class})
 @Import({
         SecurityConfig.class,
         RestAuthenticationEntryPoint.class,
@@ -82,6 +89,9 @@ class ProviderServiceControllerTest {
     private ListProviderServicesUseCase listProviderServicesUseCase;
 
     @MockitoBean
+    private ListProvidersUseCase listProvidersUseCase;
+
+    @MockitoBean
     private UpdateProviderServiceUseCase updateProviderServiceUseCase;
 
     @MockitoBean
@@ -95,6 +105,9 @@ class ProviderServiceControllerTest {
 
     @MockitoBean
     private ProviderServiceResponseMapper providerServiceResponseMapper;
+
+    @MockitoBean
+    private ProviderSummaryResponseMapper providerSummaryResponseMapper;
 
     @MockitoBean
     private ListServiceCategoriesUseCase listServiceCategoriesUseCase;
@@ -142,6 +155,52 @@ class ProviderServiceControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.data[0].name").value("Eletricista"));
+    }
+
+    @Test
+    void shouldAllowPublicProviderListingWithoutAuthentication() throws Exception {
+        UUID providerId = UUID.randomUUID();
+        UUID categoryId = UUID.fromString("10000000-0000-0000-0000-000000000001");
+
+        ProviderSummary providerSummary = new ProviderSummary(
+                providerId,
+                "Joao Santos",
+                List.of("Eletricista", "Encanador"),
+                4.7,
+                12,
+                true,
+                5
+        );
+
+        ProviderSummaryResponse response = new ProviderSummaryResponse(
+                providerId,
+                "Joao Santos",
+                List.of("Eletricista", "Encanador"),
+                4.7,
+                12,
+                true,
+                5
+        );
+
+        when(listProvidersUseCase.execute(new ListProvidersCommand(0, 10, categoryId)))
+                .thenReturn(new PageImpl<>(List.of(providerSummary), PageRequest.of(0, 10), 1));
+        when(providerSummaryResponseMapper.toResponseList(anyList())).thenReturn(List.of(response));
+
+        mockMvc.perform(get("/api/v1/providers")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .param("categoryId", categoryId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.content[0].id").value(providerId.toString()))
+                .andExpect(jsonPath("$.data.content[0].name").value("Joao Santos"))
+                .andExpect(jsonPath("$.data.content[0].categoryNames[0]").value("Eletricista"))
+                .andExpect(jsonPath("$.data.content[0].averageRating").value(4.7))
+                .andExpect(jsonPath("$.data.content[0].totalReviews").value(12))
+                .andExpect(jsonPath("$.data.content[0].serviceCount").value(5))
+                .andExpect(jsonPath("$.data.totalElements").value(1))
+                .andExpect(jsonPath("$.data.page").value(0))
+                .andExpect(jsonPath("$.data.size").value(10));
     }
 
     @Test
