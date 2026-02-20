@@ -11,6 +11,7 @@ Backend do ServicePro com Java 25 + Spring Boot 3.5.6, arquitetura DDD (modular 
 - Flyway
 - Spring Security
 - MapStruct
+- Spring Mail
 - Docker / Docker Compose
 
 ## Estrutura
@@ -42,6 +43,27 @@ Backend do ServicePro com Java 25 + Spring Boot 3.5.6, arquitetura DDD (modular 
 - Em `dev`, defaults permitem `http://localhost:5173`, `http://localhost:3000` e `http://localhost:19006`.
 - Em `staging/prod`, ajuste `APP_CORS_ALLOWED_ORIGINS` para os domínios reais do frontend web.
 - Para mobile React Native nativo, CORS normalmente não se aplica, mas para web/admin no browser se aplica.
+
+## Auth: Email e Reset de Senha
+
+- Cadastro (`POST /api/v1/auth/signup`) dispara email assíncrono de boas-vindas.
+- Fluxo de esqueci minha senha:
+  - `POST /api/v1/auth/forgot-password` (sempre responde 202 para evitar enumeração de usuários)
+  - `POST /api/v1/auth/reset-password` (troca senha com token)
+- O token de reset é persistido com hash (`tb_password_reset_tokens`) e expiração.
+- Ao redefinir senha, refresh tokens ativos do usuário são revogados.
+
+Variáveis principais:
+
+- `AUTH_PASSWORD_RESET_TOKEN_TTL_SECONDS`
+- `AUTH_LOGIN_URL`
+- `AUTH_RESET_PASSWORD_URL` (aceita `%s` para injetar token)
+- `APP_MAIL_ENABLED`
+- `APP_MAIL_HOST`
+- `APP_MAIL_PORT`
+- `APP_MAIL_USERNAME`
+- `APP_MAIL_FROM`
+- `APP_MAIL_PASSWORD`
 
 ## Testes
 

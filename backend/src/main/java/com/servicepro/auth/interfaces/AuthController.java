@@ -4,6 +4,8 @@ import com.servicepro.auth.application.usecase.login.LoginCommand;
 import com.servicepro.auth.application.usecase.login.LoginResult;
 import com.servicepro.auth.application.usecase.login.LoginUseCase;
 import com.servicepro.auth.application.usecase.login.TokenPair;
+import com.servicepro.auth.application.usecase.forgotpassword.ForgotPasswordCommand;
+import com.servicepro.auth.application.usecase.forgotpassword.ForgotPasswordUseCase;
 import com.servicepro.auth.application.usecase.me.GetCurrentUserCommand;
 import com.servicepro.auth.application.usecase.me.GetCurrentUserUseCase;
 import com.servicepro.auth.application.usecase.logout.LogoutCommand;
@@ -11,16 +13,22 @@ import com.servicepro.auth.application.usecase.logout.LogoutUseCase;
 import com.servicepro.auth.application.usecase.refresh.RefreshCommand;
 import com.servicepro.auth.application.usecase.refresh.RefreshResult;
 import com.servicepro.auth.application.usecase.refresh.RefreshUseCase;
+import com.servicepro.auth.application.usecase.resetpassword.ResetPasswordCommand;
+import com.servicepro.auth.application.usecase.resetpassword.ResetPasswordUseCase;
 import com.servicepro.auth.application.usecase.signup.SignupCommand;
 import com.servicepro.auth.application.usecase.signup.SignupUseCase;
 import com.servicepro.auth.domain.exception.InvalidCredentialsException;
 import com.servicepro.auth.infrastructure.security.CookieUtils;
 import com.servicepro.auth.infrastructure.security.AuthenticatedUserPrincipal;
+import com.servicepro.auth.interfaces.dto.ForgotPasswordRequest;
 import com.servicepro.auth.interfaces.dto.LoginRequest;
 import com.servicepro.auth.domain.model.User;
+import com.servicepro.auth.interfaces.dto.ResetPasswordRequest;
 import com.servicepro.auth.interfaces.dto.SignupRequest;
 import com.servicepro.auth.interfaces.dto.UserResponse;
+import com.servicepro.auth.interfaces.mapper.ForgotPasswordRequestMapper;
 import com.servicepro.auth.interfaces.mapper.LoginRequestMapper;
+import com.servicepro.auth.interfaces.mapper.ResetPasswordRequestMapper;
 import com.servicepro.auth.interfaces.mapper.SignupRequestMapper;
 import com.servicepro.auth.interfaces.mapper.UserMapper;
 import com.servicepro.shared.interfaces.response.ApiResponse;
@@ -48,11 +56,15 @@ public class AuthController {
 
     private final SignupUseCase signupUseCase;
     private final LoginUseCase loginUseCase;
+    private final ForgotPasswordUseCase forgotPasswordUseCase;
+    private final ResetPasswordUseCase resetPasswordUseCase;
     private final RefreshUseCase refreshUseCase;
     private final GetCurrentUserUseCase getCurrentUserUseCase;
     private final LogoutUseCase logoutUseCase;
     private final SignupRequestMapper signupRequestMapper;
     private final LoginRequestMapper loginRequestMapper;
+    private final ForgotPasswordRequestMapper forgotPasswordRequestMapper;
+    private final ResetPasswordRequestMapper resetPasswordRequestMapper;
     private final UserMapper userMapper;
     private final CookieUtils cookieUtils;
 
@@ -93,6 +105,27 @@ public class AuthController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
                 .body(ApiResponse.of(HttpStatus.OK, "Token atualizado com sucesso.", result.tokenPair()));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        ForgotPasswordCommand command = forgotPasswordRequestMapper.toCommand(request);
+        forgotPasswordUseCase.execute(command);
+
+        return ResponseEntity.status(HttpStatus.ACCEPTED)
+                .body(ApiResponse.of(
+                        HttpStatus.ACCEPTED,
+                        "Se o email estiver cadastrado, enviaremos as instrucoes para redefinicao de senha.",
+                        null
+                ));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        ResetPasswordCommand command = resetPasswordRequestMapper.toCommand(request);
+        resetPasswordUseCase.execute(command);
+
+        return ResponseEntity.ok(ApiResponse.of(HttpStatus.OK, "Senha redefinida com sucesso.", null));
     }
 
     @GetMapping("/me")

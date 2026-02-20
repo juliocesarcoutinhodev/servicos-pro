@@ -15,3 +15,14 @@ Documentação funcional/técnica do backend.
   - preferir variáveis de collection (`{{...}}`) em vez de valores fixos
   - manter scripts de `test` para salvar tokens/valores dinâmicos quando aplicável
   - para endpoints com rate limit, mapear `X-RateLimit-Remaining`, `X-RateLimit-Reset` e `Retry-After` na collection
+
+## Fluxos Auth já mapeados
+
+- `Signup Client`
+- `Signup Provider`
+- `Login Client`
+- `Refresh Token`
+- `Forgot Password`
+- `Reset Password`
+- `Logout`
+- `Me`

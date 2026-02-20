@@ -6,6 +6,7 @@ import com.servicepro.auth.domain.model.User;
 import com.servicepro.auth.infrastructure.persistence.entity.UserJpaEntity;
 import com.servicepro.auth.infrastructure.persistence.mapper.UserPersistenceMapper;
 import com.servicepro.auth.infrastructure.persistence.repository.UserJpaRepository;
+import com.servicepro.shared.domain.exception.RecursoNaoEncontradoException;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +44,14 @@ public class UserPersistenceAdapter implements UserGateway {
             return userPersistenceMapper.toDomain(savedEntity);
         } catch (DataIntegrityViolationException exception) {
             throw new EmailAlreadyExistsException(user.getEmail());
+        }
+    }
+
+    @Override
+    public void updatePasswordHash(UUID userId, String passwordHash) {
+        int updatedRows = userJpaRepository.updatePasswordHashById(userId, passwordHash);
+        if (updatedRows == 0) {
+            throw new RecursoNaoEncontradoException("Usuario nao encontrado.");
         }
     }
 }

@@ -97,6 +97,11 @@
       "type": "string"
     },
     {
+      "key": "passwordResetToken",
+      "value": "token-gerado-no-email",
+      "type": "string"
+    },
+    {
       "key": "accessToken",
       "value": "",
       "type": "string"
@@ -295,6 +300,80 @@
             ],
             "description": "POST /api/v1/auth/refresh (cookie-only)",
             "url": "{{baseUrl}}/api/v1/auth/refresh"
+          },
+          "response": []
+        },
+        {
+          "name": "Forgot Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 202', function () {",
+                  "  pm.response.to.have.status(202);",
+                  "});",
+                  "pm.collectionVariables.set('rateLimitRemaining', pm.response.headers.get('X-RateLimit-Remaining') || '');",
+                  "pm.collectionVariables.set('rateLimitReset', pm.response.headers.get('X-RateLimit-Reset') || '');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{clientEmail}}\"\n}"
+            },
+            "description": "POST /api/v1/auth/forgot-password",
+            "url": "{{baseUrl}}/api/v1/auth/forgot-password"
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{passwordResetToken}}\",\n  \"newPassword\": \"{{defaultPassword}}\"\n}"
+            },
+            "description": "POST /api/v1/auth/reset-password",
+            "url": "{{baseUrl}}/api/v1/auth/reset-password"
           },
           "response": []
         },

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.servicepro.auth.application.service.ratelimit.AuthRateLimitAction;
 import com.servicepro.auth.application.service.ratelimit.AuthRateLimitService;
 import com.servicepro.auth.application.service.ratelimit.RateLimitStatus;
+import com.servicepro.auth.application.usecase.forgotpassword.ForgotPasswordCommand;
+import com.servicepro.auth.application.usecase.forgotpassword.ForgotPasswordUseCase;
 import com.servicepro.auth.application.usecase.login.LoginCommand;
 import com.servicepro.auth.application.usecase.login.LoginResult;
 import com.servicepro.auth.application.usecase.login.LoginUseCase;
@@ -15,10 +17,13 @@ import com.servicepro.auth.application.usecase.me.GetCurrentUserUseCase;
 import com.servicepro.auth.application.usecase.refresh.RefreshCommand;
 import com.servicepro.auth.application.usecase.refresh.RefreshResult;
 import com.servicepro.auth.application.usecase.refresh.RefreshUseCase;
+import com.servicepro.auth.application.usecase.resetpassword.ResetPasswordCommand;
+import com.servicepro.auth.application.usecase.resetpassword.ResetPasswordUseCase;
 import com.servicepro.auth.application.usecase.signup.SignupCommand;
 import com.servicepro.auth.application.usecase.signup.SignupUseCase;
 import com.servicepro.auth.domain.exception.EmailAlreadyExistsException;
 import com.servicepro.auth.domain.exception.InvalidCredentialsException;
+import com.servicepro.auth.domain.exception.InvalidPasswordResetTokenException;
 import com.servicepro.auth.domain.exception.RateLimitExceededException;
 import com.servicepro.auth.domain.exception.TokenRevokedException;
 import com.servicepro.auth.domain.gateway.TokenGateway;
@@ -28,10 +33,14 @@ import com.servicepro.auth.domain.model.User;
 import com.servicepro.auth.infrastructure.config.SecurityConfig;
 import com.servicepro.auth.infrastructure.security.AuthRateLimitFilter;
 import com.servicepro.auth.infrastructure.security.CookieUtils;
+import com.servicepro.auth.interfaces.dto.ForgotPasswordRequest;
 import com.servicepro.auth.interfaces.dto.LoginRequest;
+import com.servicepro.auth.interfaces.dto.ResetPasswordRequest;
 import com.servicepro.auth.interfaces.dto.SignupRequest;
 import com.servicepro.auth.interfaces.dto.UserResponse;
+import com.servicepro.auth.interfaces.mapper.ForgotPasswordRequestMapper;
 import com.servicepro.auth.interfaces.mapper.LoginRequestMapper;
+import com.servicepro.auth.interfaces.mapper.ResetPasswordRequestMapper;
 import com.servicepro.auth.interfaces.mapper.SignupRequestMapper;
 import com.servicepro.auth.interfaces.mapper.UserMapper;
 import com.servicepro.shared.infrastructure.security.RestAccessDeniedHandler;
@@ -62,6 +71,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.BDDMockito.willThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -95,6 +105,12 @@ class AuthControllerTest {
     private LoginUseCase loginUseCase;
 
     @MockBean
+    private ForgotPasswordUseCase forgotPasswordUseCase;
+
+    @MockBean
+    private ResetPasswordUseCase resetPasswordUseCase;
+
+    @MockBean
     private RefreshUseCase refreshUseCase;
 
     @MockBean
@@ -111,6 +127,12 @@ class AuthControllerTest {
 
     @MockBean
     private LoginRequestMapper loginRequestMapper;
+
+    @MockBean
+    private ForgotPasswordRequestMapper forgotPasswordRequestMapper;
+
+    @MockBean
+    private ResetPasswordRequestMapper resetPasswordRequestMapper;
 
     @MockBean
     private UserMapper userMapper;
@@ -350,6 +372,61 @@ class AuthControllerTest {
 
         then(refreshUseCase).should().execute(any(RefreshCommand.class));
         then(cookieUtils).should().buildRefreshTokenCookie("new-refresh-token");
+    }
+
+    @Test
+    void shouldReturn202WhenForgotPasswordIsRequested() throws Exception {
+        ForgotPasswordRequest request = new ForgotPasswordRequest("joao@email.com");
+        ForgotPasswordCommand command = new ForgotPasswordCommand("joao@email.com");
+
+        given(forgotPasswordRequestMapper.toCommand(any(ForgotPasswordRequest.class))).willReturn(command);
+
+        mockMvc.perform(post("/api/v1/auth/forgot-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.status").value(202))
+                .andExpect(jsonPath("$.message")
+                        .value("Se o email estiver cadastrado, enviaremos as instrucoes para redefinicao de senha."));
+
+        then(forgotPasswordRequestMapper).should().toCommand(any(ForgotPasswordRequest.class));
+        then(forgotPasswordUseCase).should().execute(command);
+    }
+
+    @Test
+    void shouldReturn200WhenResetPasswordSucceeds() throws Exception {
+        ResetPasswordRequest request = new ResetPasswordRequest("reset-token", "NovaSenha123");
+        ResetPasswordCommand command = new ResetPasswordCommand("reset-token", "NovaSenha123");
+
+        given(resetPasswordRequestMapper.toCommand(any(ResetPasswordRequest.class))).willReturn(command);
+
+        mockMvc.perform(post("/api/v1/auth/reset-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value("Senha redefinida com sucesso."));
+
+        then(resetPasswordRequestMapper).should().toCommand(any(ResetPasswordRequest.class));
+        then(resetPasswordUseCase).should().execute(command);
+    }
+
+    @Test
+    void shouldReturn400WhenResetPasswordTokenIsInvalid() throws Exception {
+        ResetPasswordRequest request = new ResetPasswordRequest("reset-token", "NovaSenha123");
+        ResetPasswordCommand command = new ResetPasswordCommand("reset-token", "NovaSenha123");
+
+        given(resetPasswordRequestMapper.toCommand(any(ResetPasswordRequest.class))).willReturn(command);
+        willThrow(new InvalidPasswordResetTokenException())
+                .given(resetPasswordUseCase)
+                .execute(any(ResetPasswordCommand.class));
+
+        mockMvc.perform(post("/api/v1/auth/reset-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message", containsString("Token de redefinicao")));
     }
 
     @Test

@@ -13,4 +13,6 @@ public interface UserGateway {
     Optional<User> findById(UUID id);
 
     User save(User user);
+
+    void updatePasswordHash(UUID userId, String passwordHash);
 }
