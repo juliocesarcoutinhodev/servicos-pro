@@ -56,7 +56,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -98,52 +98,52 @@ class AuthControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     private SignupUseCase signupUseCase;
 
-    @MockBean
+    @MockitoBean
     private LoginUseCase loginUseCase;
 
-    @MockBean
+    @MockitoBean
     private ForgotPasswordUseCase forgotPasswordUseCase;
 
-    @MockBean
+    @MockitoBean
     private ResetPasswordUseCase resetPasswordUseCase;
 
-    @MockBean
+    @MockitoBean
     private RefreshUseCase refreshUseCase;
 
-    @MockBean
+    @MockitoBean
     private GetCurrentUserUseCase getCurrentUserUseCase;
 
-    @MockBean
+    @MockitoBean
     private LogoutUseCase logoutUseCase;
 
-    @MockBean
+    @MockitoBean
     private AuthRateLimitService authRateLimitService;
 
-    @MockBean
+    @MockitoBean
     private SignupRequestMapper signupRequestMapper;
 
-    @MockBean
+    @MockitoBean
     private LoginRequestMapper loginRequestMapper;
 
-    @MockBean
+    @MockitoBean
     private ForgotPasswordRequestMapper forgotPasswordRequestMapper;
 
-    @MockBean
+    @MockitoBean
     private ResetPasswordRequestMapper resetPasswordRequestMapper;
 
-    @MockBean
+    @MockitoBean
     private UserMapper userMapper;
 
-    @MockBean
+    @MockitoBean
     private TokenGateway tokenGateway;
 
-    @MockBean
+    @MockitoBean
     private CookieUtils cookieUtils;
 
-    @MockBean
+    @MockitoBean
     private UserDetailsService userDetailsService;
 
     @BeforeEach

@@ -5,29 +5,37 @@ import com.servicepro.auth.domain.gateway.RefreshTokenGateway;
 import com.servicepro.auth.domain.gateway.RateLimitGateway;
 import com.servicepro.auth.domain.gateway.UserGateway;
 import com.servicepro.auth.domain.gateway.PasswordResetTokenGateway;
+import com.servicepro.catalog.domain.gateway.ServiceCategoryGateway;
+import com.servicepro.providers.domain.gateway.ProviderServiceGateway;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
 @ActiveProfiles("test")
 class ServiceProBackendApplicationTests {
 
-    @MockBean
+    @MockitoBean
     private UserGateway userGateway;
 
-    @MockBean
+    @MockitoBean
     private RefreshTokenGateway refreshTokenGateway;
 
-    @MockBean
+    @MockitoBean
     private RefreshTokenCacheGateway refreshTokenCacheGateway;
 
-    @MockBean
+    @MockitoBean
     private RateLimitGateway rateLimitGateway;
 
-    @MockBean
+    @MockitoBean
     private PasswordResetTokenGateway passwordResetTokenGateway;
+
+    @MockitoBean
+    private ServiceCategoryGateway serviceCategoryGateway;
+
+    @MockitoBean
+    private ProviderServiceGateway providerServiceGateway;
 
     @Test
     void contextLoads() {
