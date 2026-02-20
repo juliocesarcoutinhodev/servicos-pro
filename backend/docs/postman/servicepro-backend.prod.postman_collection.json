@@ -40,6 +40,14 @@
           "",
           "if (!pm.collectionVariables.get('defaultPassword')) {",
           "  pm.collectionVariables.set('defaultPassword', 'SenhaForte123');",
+          "}",
+          "",
+          "if (!pm.collectionVariables.get('newCategoryName')) {",
+          "  pm.collectionVariables.set('newCategoryName', `Categoria ${runId}`);",
+          "}",
+          "",
+          "if (!pm.collectionVariables.get('newCategoryDescription')) {",
+          "  pm.collectionVariables.set('newCategoryDescription', 'Categoria criada via collection');",
           "}"
         ]
       }
@@ -103,6 +111,26 @@
     },
     {
       "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "newCategoryName",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "newCategoryDescription",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "serviceCategoryId",
+      "value": "10000000-0000-0000-0000-000000000001",
+      "type": "string"
+    },
+    {
+      "key": "providerServiceId",
       "value": "",
       "type": "string"
     },
@@ -446,6 +474,280 @@
             ],
             "description": "GET /api/v1/auth/me",
             "url": "{{baseUrl}}/api/v1/auth/me"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Provider Services",
+      "item": [
+        {
+          "name": "Login Provider",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const data = pm.response.json()?.data;",
+                  "if (data?.accessToken) {",
+                  "  pm.collectionVariables.set('accessToken', data.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{providerEmail}}\",\n  \"password\": \"{{defaultPassword}}\"\n}"
+            },
+            "description": "POST /api/v1/auth/login",
+            "url": "{{baseUrl}}/api/v1/auth/login"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Service Category",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const data = pm.response.json()?.data;",
+                  "if (data?.id) {",
+                  "  pm.collectionVariables.set('serviceCategoryId', data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{newCategoryName}}\",\n  \"description\": \"{{newCategoryDescription}}\"\n}"
+            },
+            "description": "POST /api/v1/services/categories",
+            "url": "{{baseUrl}}/api/v1/services/categories"
+          },
+          "response": []
+        },
+        {
+          "name": "List Service Categories",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const list = pm.response.json()?.data || [];",
+                  "if (list.length > 0 && list[0]?.id) {",
+                  "  pm.collectionVariables.set('serviceCategoryId', list[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "GET /api/v1/services/categories",
+            "url": "{{baseUrl}}/api/v1/services/categories"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Provider Service",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const data = pm.response.json()?.data;",
+                  "if (data?.id) {",
+                  "  pm.collectionVariables.set('providerServiceId', data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": \"{{serviceCategoryId}}\",\n  \"name\": \"Instalacao de tomada\",\n  \"description\": \"Servico residencial\",\n  \"priceCents\": 15000\n}"
+            },
+            "description": "POST /api/v1/providers/services",
+            "url": "{{baseUrl}}/api/v1/providers/services"
+          },
+          "response": []
+        },
+        {
+          "name": "List My Provider Services",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const list = pm.response.json()?.data || [];",
+                  "if (list.length > 0 && list[0]?.id) {",
+                  "  pm.collectionVariables.set('providerServiceId', list[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "description": "GET /api/v1/providers/services",
+            "url": "{{baseUrl}}/api/v1/providers/services"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Provider Service",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": \"{{serviceCategoryId}}\",\n  \"name\": \"Instalacao de tomada premium\",\n  \"description\": \"Servico residencial com garantia\",\n  \"priceCents\": 18000\n}"
+            },
+            "description": "PUT /api/v1/providers/services/{id}",
+            "url": "{{baseUrl}}/api/v1/providers/services/{{providerServiceId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Provider Service",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "  pm.response.to.have.status(204);",
+                  "});",
+                  "pm.collectionVariables.unset('providerServiceId');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "description": "DELETE /api/v1/providers/services/{id}",
+            "url": "{{baseUrl}}/api/v1/providers/services/{{providerServiceId}}"
           },
           "response": []
         }

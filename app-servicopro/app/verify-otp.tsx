@@ -17,6 +17,7 @@ import {
   Animated,
   Keyboard,
   KeyboardAvoidingView,
+  LayoutChangeEvent,
   NativeSyntheticEvent,
   Platform,
   ScrollView,
@@ -44,7 +45,22 @@ export default function VerifyOtpScreen() {
 
   const scrollRef = useRef<ScrollView>(null);
   const inputRefs = useRef<(TextInput | null)[]>([]);
+  const newPasswordRef = useRef<TextInput>(null);
+  const confirmPasswordRef = useRef<TextInput>(null);
+  const fieldLayoutsRef = useRef<Record<string, number>>({});
   const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  /** Rola o scroll para que o campo recém-focado fique visível acima do teclado */
+  function scrollToField(fieldKey: string) {
+    const yOffset = fieldLayoutsRef.current[fieldKey];
+    if (yOffset !== undefined) {
+      scrollRef.current?.scrollTo({ y: yOffset - 20, animated: true });
+    }
+  }
+
+  function onFieldLayout(fieldKey: string, e: LayoutChangeEvent) {
+    fieldLayoutsRef.current[fieldKey] = e.nativeEvent.layout.y;
+  }
 
   const [digits, setDigits] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [newPassword, setNewPassword] = useState("");
@@ -182,13 +198,14 @@ export default function VerifyOtpScreen() {
       <LinearGradient colors={["#1E40AF", "#3B82F6"]} className="absolute inset-0" />
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 24}
       >
         <ScrollView
           ref={scrollRef}
           className="flex-1"
-          contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 60 }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           bounces={false}
@@ -304,11 +321,15 @@ export default function VerifyOtpScreen() {
                 </View>
 
                 {/* Nova senha */}
-                <View className="relative mb-1">
+                <View
+                  className="relative mb-1"
+                  onLayout={(e) => onFieldLayout("newPassword", e)}
+                >
                   <View className="absolute left-4 z-10" style={{ top: 38 }}>
                     <Lock size={18} color="#94A3B8" />
                   </View>
                   <Input
+                    ref={newPasswordRef}
                     label="Nova senha"
                     placeholder="Mínimo 8 caracteres"
                     secureTextEntry
@@ -322,11 +343,10 @@ export default function VerifyOtpScreen() {
                     error={errors.newPassword}
                     inputClassName="pl-11"
                     onFocus={() =>
-                      setTimeout(
-                        () => scrollRef.current?.scrollToEnd({ animated: true }),
-                        200
-                      )
+                      setTimeout(() => scrollToField("newPassword"), 200)
                     }
+                    returnKeyType="next"
+                    onSubmitEditing={() => confirmPasswordRef.current?.focus()}
                   />
                 </View>
 
@@ -357,11 +377,15 @@ export default function VerifyOtpScreen() {
                 )}
 
                 {/* Confirmar senha */}
-                <View className="relative mb-2">
+                <View
+                  className="relative mb-2"
+                  onLayout={(e) => onFieldLayout("confirmPassword", e)}
+                >
                   <View className="absolute left-4 z-10" style={{ top: 38 }}>
                     <ShieldCheck size={18} color="#94A3B8" />
                   </View>
                   <Input
+                    ref={confirmPasswordRef}
                     label="Confirmar nova senha"
                     placeholder="Repita a nova senha"
                     secureTextEntry
@@ -374,6 +398,11 @@ export default function VerifyOtpScreen() {
                     }}
                     error={errors.confirmPassword}
                     inputClassName="pl-11"
+                    onFocus={() =>
+                      setTimeout(() => scrollToField("confirmPassword"), 200)
+                    }
+                    returnKeyType="done"
+                    onSubmitEditing={handleReset}
                   />
                 </View>
 

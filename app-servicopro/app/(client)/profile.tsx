@@ -175,10 +175,11 @@ export default function ClientProfileScreen() {
   const firstName = user.name.split(" ")[0];
 
   return (
-    <View className="flex-1 bg-[#F8FAFC]">
+    <View style={{ flex: 1, backgroundColor: "#1E40AF" }}>
       <StatusBar style="light" />
       <ScrollView
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 32, backgroundColor: "#F8FAFC" }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -305,16 +306,6 @@ export default function ClientProfileScreen() {
             />
           </View>
 
-          {/* Logout button */}
-          <TouchableOpacity
-            onPress={handleLogout}
-            className="bg-white rounded-2xl p-5 shadow-sm border border-red-100 mb-8 flex-row items-center justify-center gap-3"
-          >
-            <LogOut size={20} color="#EF4444" />
-            <Text className="text-[#EF4444] font-semibold text-base">
-              Sair da conta
-            </Text>
-          </TouchableOpacity>
         </View>
       </ScrollView>
     </View>
