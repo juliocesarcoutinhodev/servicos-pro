@@ -7,6 +7,7 @@ import com.servicepro.auth.application.usecase.signup.SignupUseCaseImpl;
 import com.servicepro.auth.domain.exception.EmailAlreadyExistsException;
 import com.servicepro.auth.domain.exception.InvalidSignupPasswordException;
 import com.servicepro.auth.domain.exception.InvalidSignupRoleException;
+import com.servicepro.auth.domain.gateway.AccountNotificationGateway;
 import com.servicepro.auth.domain.gateway.PasswordHasher;
 import com.servicepro.auth.domain.gateway.UserGateway;
 import com.servicepro.auth.domain.model.Role;
@@ -37,12 +38,15 @@ class SignupUseCaseImplTest {
     @Mock
     private PasswordHasher passwordHasher;
 
+    @Mock
+    private AccountNotificationGateway accountNotificationGateway;
+
     private SignupUseCase signupUseCase;
 
     @BeforeEach
     void setUp() {
         SignupDomainMapper signupDomainMapper = Mappers.getMapper(SignupDomainMapper.class);
-        signupUseCase = new SignupUseCaseImpl(userGateway, passwordHasher, signupDomainMapper);
+        signupUseCase = new SignupUseCaseImpl(userGateway, passwordHasher, signupDomainMapper, accountNotificationGateway);
     }
 
     @Test
@@ -85,6 +89,7 @@ class SignupUseCaseImplTest {
         assertThat(captured.isActive()).isTrue();
         assertThat(captured.getPasswordHash()).isEqualTo("argon-hash");
         then(passwordHasher).should().hash("SenhaForte123");
+        then(accountNotificationGateway).should().sendWelcomeEmail(savedUser);
 
         assertThat(savedUser.getId()).isNotNull();
         assertThat(savedUser.getEmail()).isEqualTo("joao@email.com");
@@ -126,6 +131,7 @@ class SignupUseCaseImplTest {
         assertThatThrownBy(() -> signupUseCase.execute(command))
                 .isInstanceOf(EmailAlreadyExistsException.class)
                 .hasMessageContaining("maria@email.com");
+        then(accountNotificationGateway).shouldHaveNoInteractions();
     }
 
     @Test
@@ -141,6 +147,7 @@ class SignupUseCaseImplTest {
         assertThatThrownBy(() -> signupUseCase.execute(command))
                 .isInstanceOf(InvalidSignupRoleException.class)
                 .hasMessageContaining("Apenas CLIENT e PROVIDER");
+        then(accountNotificationGateway).shouldHaveNoInteractions();
     }
 
     @Test
@@ -159,5 +166,6 @@ class SignupUseCaseImplTest {
 
         then(userGateway).shouldHaveNoInteractions();
         then(passwordHasher).shouldHaveNoInteractions();
+        then(accountNotificationGateway).shouldHaveNoInteractions();
     }
 }

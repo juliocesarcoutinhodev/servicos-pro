@@ -3,6 +3,23 @@ spring:
     name: servicepro-backend
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
+  mail:
+    host: ${APP_MAIL_HOST:}
+    port: ${APP_MAIL_PORT:587}
+    username: ${APP_MAIL_USERNAME:}
+    password: ${APP_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${APP_MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${APP_MAIL_SMTP_STARTTLS_ENABLE:true}
+          ssl:
+            enable: ${APP_MAIL_SMTP_SSL_ENABLE:false}
+          connectiontimeout: ${APP_MAIL_SMTP_CONNECTIONTIMEOUT:5000}
+          timeout: ${APP_MAIL_SMTP_TIMEOUT:5000}
+          writetimeout: ${APP_MAIL_SMTP_WRITETIMEOUT:5000}
+        debug: ${APP_MAIL_DEBUG:false}
 
 server:
   port: ${SERVER_PORT:8080}
@@ -36,8 +53,28 @@ auth:
   rate-limit:
     max-requests-per-window: ${AUTH_RATE_LIMIT_MAX_REQUESTS_PER_WINDOW:10}
     window-seconds: ${AUTH_RATE_LIMIT_WINDOW_SECONDS:60}
+  password-reset:
+    token-ttl-seconds: ${AUTH_PASSWORD_RESET_TOKEN_TTL_SECONDS:1800}
+  links:
+    login-url: ${AUTH_LOGIN_URL:http://localhost:19006/login}
+    reset-password-url: ${AUTH_RESET_PASSWORD_URL:http://localhost:19006/reset-password?token=%s}
 
 app:
+  mail:
+    enabled: ${APP_MAIL_ENABLED:false}
+    from: ${APP_MAIL_FROM:no-reply@servicepro.app}
+    host: ${APP_MAIL_HOST:}
+    port: ${APP_MAIL_PORT:587}
+    username: ${APP_MAIL_USERNAME:}
+    password: ${APP_MAIL_PASSWORD:}
+    smtp:
+      auth: ${APP_MAIL_SMTP_AUTH:true}
+      starttls-enable: ${APP_MAIL_SMTP_STARTTLS_ENABLE:true}
+      ssl-enable: ${APP_MAIL_SMTP_SSL_ENABLE:false}
+      connection-timeout: ${APP_MAIL_SMTP_CONNECTIONTIMEOUT:5000}
+      timeout: ${APP_MAIL_SMTP_TIMEOUT:5000}
+      write-timeout: ${APP_MAIL_SMTP_WRITETIMEOUT:5000}
+      debug: ${APP_MAIL_DEBUG:false}
   cors:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000,http://localhost:19006}
     allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:}

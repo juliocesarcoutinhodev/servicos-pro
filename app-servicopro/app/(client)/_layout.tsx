@@ -14,6 +14,7 @@ export default function ClientLayout() {
       <Stack.Screen name="professional-profile" />
       <Stack.Screen name="service-request" />
       <Stack.Screen name="payment" />
+      <Stack.Screen name="profile" />
     </Stack>
   );
 }

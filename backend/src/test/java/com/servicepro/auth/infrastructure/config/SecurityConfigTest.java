@@ -3,10 +3,12 @@ package com.servicepro.auth.infrastructure.config;
 import com.servicepro.auth.application.service.ratelimit.AuthRateLimitAction;
 import com.servicepro.auth.application.service.ratelimit.AuthRateLimitService;
 import com.servicepro.auth.application.service.ratelimit.RateLimitStatus;
+import com.servicepro.auth.application.usecase.forgotpassword.ForgotPasswordUseCase;
 import com.servicepro.auth.application.usecase.login.LoginUseCase;
 import com.servicepro.auth.application.usecase.logout.LogoutUseCase;
 import com.servicepro.auth.application.usecase.me.GetCurrentUserUseCase;
 import com.servicepro.auth.application.usecase.refresh.RefreshUseCase;
+import com.servicepro.auth.application.usecase.resetpassword.ResetPasswordUseCase;
 import com.servicepro.auth.application.usecase.signup.SignupUseCase;
 import com.servicepro.auth.domain.gateway.TokenGateway;
 import com.servicepro.auth.domain.model.AccessTokenClaims;
@@ -15,7 +17,9 @@ import com.servicepro.auth.domain.model.User;
 import com.servicepro.auth.infrastructure.security.CookieUtils;
 import com.servicepro.auth.interfaces.AuthController;
 import com.servicepro.auth.interfaces.dto.UserResponse;
+import com.servicepro.auth.interfaces.mapper.ForgotPasswordRequestMapper;
 import com.servicepro.auth.interfaces.mapper.LoginRequestMapper;
+import com.servicepro.auth.interfaces.mapper.ResetPasswordRequestMapper;
 import com.servicepro.auth.interfaces.mapper.SignupRequestMapper;
 import com.servicepro.auth.interfaces.mapper.UserMapper;
 import com.servicepro.shared.infrastructure.security.RestAccessDeniedHandler;
@@ -73,6 +77,12 @@ class SecurityConfigTest {
     private LoginUseCase loginUseCase;
 
     @MockBean
+    private ForgotPasswordUseCase forgotPasswordUseCase;
+
+    @MockBean
+    private ResetPasswordUseCase resetPasswordUseCase;
+
+    @MockBean
     private RefreshUseCase refreshUseCase;
 
     @MockBean
@@ -89,6 +99,12 @@ class SecurityConfigTest {
 
     @MockBean
     private LoginRequestMapper loginRequestMapper;
+
+    @MockBean
+    private ForgotPasswordRequestMapper forgotPasswordRequestMapper;
+
+    @MockBean
+    private ResetPasswordRequestMapper resetPasswordRequestMapper;
 
     @MockBean
     private UserMapper userMapper;
@@ -111,6 +127,18 @@ class SecurityConfigTest {
     @Test
     void shouldPermitPublicLoginWithoutAuthentication() throws Exception {
         mockMvc.perform(post("/api/v1/auth/login"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldPermitPublicForgotPasswordWithoutAuthentication() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/forgot-password"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldPermitPublicResetPasswordWithoutAuthentication() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/reset-password"))
                 .andExpect(status().isBadRequest());
     }
 

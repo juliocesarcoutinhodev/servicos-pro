@@ -1,8 +1,10 @@
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { useAuth } from "@/context/AuthContext";
+import { extractApiError } from "@/utils/apiError";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { Briefcase, User } from "lucide-react-native";
+import { Lock, Mail, Zap } from "lucide-react-native";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Keyboard,
@@ -15,59 +17,71 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-type UserType = "client" | "provider" | null;
-
+/**
+ * Login screen — authenticates via POST /api/v1/auth/login.
+ * The backend returns the user's role inside the JWT; the route guard
+ * in AuthContext redirects to the correct home automatically.
+ */
 export default function LoginScreen() {
   const router = useRouter();
+  const { signIn, isLoading: authLoading } = useAuth();
   const scrollViewRef = useRef<ScrollView>(null);
-  const [selectedUserType, setSelectedUserType] = useState<UserType>(null);
+
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [errors, setErrors] = useState<{
+    email?: string;
+    password?: string;
+    general?: string;
+  }>({});
 
-  const handleUserTypeSelect = (type: "client" | "provider") => {
-    setSelectedUserType(type);
-    // Preenche email de exemplo baseado no tipo
-    if (type === "client") {
-      setEmail("cliente@servicopro.com");
-    } else {
-      setEmail("prestador@servicopro.com");
+  function validate(): boolean {
+    const newErrors: typeof errors = {};
+    if (!email.trim()) {
+      newErrors.email = "Informe seu email";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      newErrors.email = "Email inválido";
     }
-  };
+    if (!password) {
+      newErrors.password = "Informe sua senha";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }
 
-  const handleLogin = () => {
-    if (selectedUserType === "client") {
-      router.push("/(client)/home");
-    } else if (selectedUserType === "provider") {
-      router.push("/(provider)/home");
+  const handleLogin = async () => {
+    if (!validate()) return;
+    setIsSubmitting(true);
+    setErrors({});
+    try {
+      await signIn({ email: email.trim(), password });
+    } catch (err) {
+      setErrors({ general: extractApiError(err) });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      "keyboardDidShow",
-      () => {
-        setIsKeyboardVisible(true);
-        // Scroll para o final quando o teclado aparecer
-        setTimeout(() => {
-          scrollViewRef.current?.scrollToEnd({ animated: true });
-        }, 200);
-      }
-    );
-
-    const keyboardDidHideListener = Keyboard.addListener(
-      "keyboardDidHide",
-      () => {
-        setIsKeyboardVisible(false);
-        // Scroll de volta para o topo quando o teclado desaparecer
-        setTimeout(() => {
-          scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-        }, 100);
-      }
-    );
-
+    const show = Keyboard.addListener("keyboardDidShow", () => {
+      setIsKeyboardVisible(true);
+      setTimeout(
+        () => scrollViewRef.current?.scrollToEnd({ animated: true }),
+        200
+      );
+    });
+    const hide = Keyboard.addListener("keyboardDidHide", () => {
+      setIsKeyboardVisible(false);
+      setTimeout(
+        () => scrollViewRef.current?.scrollTo({ y: 0, animated: true }),
+        100
+      );
+    });
     return () => {
-      keyboardDidShowListener.remove();
-      keyboardDidHideListener.remove();
+      show.remove();
+      hide.remove();
     };
   }, []);
 
@@ -98,8 +112,11 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           bounces={false}
         >
-          {/* Header */}
-          <View className="px-6 pt-8 pb-8">
+          {/* ── Hero ──────────────────────────────────────────────────────── */}
+          <View className="px-6 pt-12 pb-10 items-center">
+            <View className="w-20 h-20 rounded-3xl bg-white/20 items-center justify-center mb-6 shadow-lg">
+              <Zap size={40} color="#FFFFFF" fill="#FFFFFF" />
+            </View>
             <Text className="text-white text-center text-3xl font-bold mb-2">
               Serviços Pro
             </Text>
@@ -108,113 +125,75 @@ export default function LoginScreen() {
             </Text>
           </View>
 
-          {/* Content */}
-          <View className="bg-[#F8FAFC] rounded-t-[32px] px-6 pt-10 pb-6">
-            <Text className="text-center text-2xl font-bold mb-2">
+          {/* ── Form Card ─────────────────────────────────────────────────── */}
+          <View className="bg-[#F8FAFC] rounded-t-[32px] px-6 pt-10 pb-6 flex-1">
+            <Text className="text-center text-2xl font-bold mb-1">
               Bem-vindo!
             </Text>
             <Text className="text-[#64748B] text-center mb-8">
-              Escolha como deseja continuar
+              Entre com sua conta para continuar
             </Text>
 
-            {/* User Type Cards */}
-            <View className="mb-8">
-              <TouchableOpacity
-                onPress={() => handleUserTypeSelect("client")}
-                className={`bg-white rounded-2xl p-6 shadow-sm border-2 mb-4 ${
-                  selectedUserType === "client"
-                    ? "border-[#3B82F6] bg-[#3B82F6]/5"
-                    : "border-gray-100"
-                }`}
-                activeOpacity={0.7}
-              >
-                <View className="flex-row items-center gap-4 w-full">
-                  <LinearGradient
-                    colors={["#3B82F6", "#2563EB"]}
-                    className="w-14 h-14 rounded-full items-center justify-center"
-                  >
-                    <User size={28} color="#FFFFFF" />
-                  </LinearGradient>
-                  <View className="flex-1">
-                    <View className="flex-row items-center gap-2">
-                      <Text className="text-lg font-semibold mb-1">
-                        Sou Cliente
-                      </Text>
-                      {selectedUserType === "client" && (
-                        <View className="w-2 h-2 rounded-full bg-[#3B82F6]" />
-                      )}
-                    </View>
-                    <Text className="text-[#64748B]">
-                      Preciso contratar um serviço
-                    </Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => handleUserTypeSelect("provider")}
-                className={`bg-white rounded-2xl p-6 shadow-sm border-2 ${
-                  selectedUserType === "provider"
-                    ? "border-[#FB923C] bg-[#FB923C]/5"
-                    : "border-gray-100"
-                }`}
-                activeOpacity={0.7}
-              >
-                <View className="flex-row items-center gap-4 w-full">
-                  <LinearGradient
-                    colors={["#FB923C", "#F97316"]}
-                    className="w-14 h-14 rounded-full items-center justify-center"
-                  >
-                    <Briefcase size={28} color="#FFFFFF" />
-                  </LinearGradient>
-                  <View className="flex-1">
-                    <View className="flex-row items-center gap-2">
-                      <Text className="text-lg font-semibold mb-1">
-                        Sou Prestador
-                      </Text>
-                      {selectedUserType === "provider" && (
-                        <View className="w-2 h-2 rounded-full bg-[#FB923C]" />
-                      )}
-                    </View>
-                    <Text className="text-[#64748B]">
-                      Quero oferecer meus serviços
-                    </Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            </View>
-
-            {/* Input Fields */}
-            <View className="mb-6">
+            {/* Email */}
+            <View className="relative mb-1">
+              <View className="absolute left-4 z-10" style={{ top: 38 }}>
+                <Mail size={18} color="#94A3B8" />
+              </View>
               <Input
-                label="Email ou telefone"
-                placeholder="Digite seu email ou telefone"
+                label="Email"
+                placeholder="seu@email.com"
                 keyboardType="email-address"
                 autoCapitalize="none"
+                autoComplete="email"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(v) => {
+                  setEmail(v);
+                  if (errors.email) setErrors((e) => ({ ...e, email: undefined }));
+                }}
+                error={errors.email}
+                inputClassName="pl-11"
               />
+            </View>
+
+            {/* Senha */}
+            <View className="relative mb-2">
+              <View className="absolute left-4 z-10" style={{ top: 38 }}>
+                <Lock size={18} color="#94A3B8" />
+              </View>
               <Input
                 label="Senha"
                 placeholder="Digite sua senha"
                 secureTextEntry
                 showPasswordToggle
+                value={password}
+                onChangeText={(v) => {
+                  setPassword(v);
+                  if (errors.password)
+                    setErrors((e) => ({ ...e, password: undefined }));
+                }}
+                error={errors.password}
+                inputClassName="pl-11"
                 onFocus={() => {
-                  // Scroll para o campo de senha quando receber foco
-                  setTimeout(() => {
-                    scrollViewRef.current?.scrollToEnd({ animated: true });
-                  }, 200);
+                  setTimeout(
+                    () => scrollViewRef.current?.scrollToEnd({ animated: true }),
+                    200
+                  );
                 }}
               />
             </View>
 
-            {/* User Type Indicator */}
-            {selectedUserType && (
-              <View className="mb-4 px-4 py-3 rounded-xl bg-blue-50 border border-blue-200">
-                <Text className="text-blue-800 text-sm text-center">
-                  {selectedUserType === "client"
-                    ? "🔵 Acessando como Cliente"
-                    : "🟠 Acessando como Prestador"}
+            {/* Esqueci a senha — placeholder para futuro */}
+            <TouchableOpacity className="self-end mb-6 -mt-1">
+              <Text className="text-[#3B82F6] text-sm font-medium">
+                Esqueci minha senha
+              </Text>
+            </TouchableOpacity>
+
+            {/* Erro geral da API */}
+            {errors.general && (
+              <View className="mb-5 px-4 py-3 rounded-xl bg-red-50 border border-red-200">
+                <Text className="text-red-700 text-sm text-center">
+                  {errors.general}
                 </Text>
               </View>
             )}
@@ -225,20 +204,24 @@ export default function LoginScreen() {
               size="lg"
               fullWidth
               className="mb-4"
-              disabled={!selectedUserType}
+              disabled={isSubmitting || authLoading}
+              loading={isSubmitting}
             >
               Entrar
             </Button>
 
+            <View className="flex-row items-center gap-4 mb-6">
+              <View className="flex-1 h-px bg-gray-200" />
+              <Text className="text-[#94A3B8] text-sm">ou</Text>
+              <View className="flex-1 h-px bg-gray-200" />
+            </View>
+
             <Button
               onPress={() => router.push("/signup")}
-              variant="ghost"
+              variant="outline"
               fullWidth
             >
-              <Text className="text-[#3B82F6] text-center">
-                Não tem conta?{" "}
-                <Text className="font-semibold">Cadastre-se</Text>
-              </Text>
+              Criar nova conta
             </Button>
           </View>
         </ScrollView>

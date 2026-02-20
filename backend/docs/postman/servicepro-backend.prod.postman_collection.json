@@ -1,8 +1,8 @@
 {
   "info": {
-    "_postman_id": "8f3fa19e-a074-4b64-a2fc-906f5300b72e",
-    "name": "ServicePro Backend API",
-    "description": "Collection oficial do backend ServicePro. Atualize sempre que novos endpoints forem criados.",
+    "_postman_id": "f00f4681-5c90-417e-8f87-9fcd3f7dd767",
+    "name": "ServicePro Backend API - Prod",
+    "description": "Collection oficial do backend ServicePro para producao (VPS). Atualize sempre que novos endpoints forem criados.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "event": [
@@ -48,12 +48,12 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:8080",
+      "value": "http://vps7348.integrator.host:8080",
       "type": "string"
     },
     {
       "key": "managementBaseUrl",
-      "value": "http://localhost:8081",
+      "value": "http://vps7348.integrator.host:8080",
       "type": "string"
     },
     {
@@ -97,6 +97,11 @@
       "type": "string"
     },
     {
+      "key": "passwordResetToken",
+      "value": "token-gerado-no-email",
+      "type": "string"
+    },
+    {
       "key": "accessToken",
       "value": "",
       "type": "string"
@@ -122,7 +127,7 @@
       "name": "Observability",
       "item": [
         {
-          "name": "Health Check",
+          "name": "API Docs Check",
           "request": {
             "method": "GET",
             "header": [
@@ -131,8 +136,8 @@
                 "value": "application/json"
               }
             ],
-            "description": "GET /actuator/health",
-            "url": "{{managementBaseUrl}}/actuator/health"
+            "description": "GET /v3/api-docs",
+            "url": "{{baseUrl}}/v3/api-docs"
           },
           "response": []
         }
@@ -295,6 +300,80 @@
             ],
             "description": "POST /api/v1/auth/refresh (cookie-only)",
             "url": "{{baseUrl}}/api/v1/auth/refresh"
+          },
+          "response": []
+        },
+        {
+          "name": "Forgot Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 202', function () {",
+                  "  pm.response.to.have.status(202);",
+                  "});",
+                  "pm.collectionVariables.set('rateLimitRemaining', pm.response.headers.get('X-RateLimit-Remaining') || '');",
+                  "pm.collectionVariables.set('rateLimitReset', pm.response.headers.get('X-RateLimit-Reset') || '');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{clientEmail}}\"\n}"
+            },
+            "description": "POST /api/v1/auth/forgot-password",
+            "url": "{{baseUrl}}/api/v1/auth/forgot-password"
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{passwordResetToken}}\",\n  \"newPassword\": \"{{defaultPassword}}\"\n}"
+            },
+            "description": "POST /api/v1/auth/reset-password",
+            "url": "{{baseUrl}}/api/v1/auth/reset-password"
           },
           "response": []
         },

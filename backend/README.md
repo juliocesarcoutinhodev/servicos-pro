@@ -11,6 +11,7 @@ Backend do ServicePro com Java 25 + Spring Boot 3.5.6, arquitetura DDD (modular 
 - Flyway
 - Spring Security
 - MapStruct
+- Spring Mail
 - Docker / Docker Compose
 
 ## Estrutura
@@ -43,13 +44,36 @@ Backend do ServicePro com Java 25 + Spring Boot 3.5.6, arquitetura DDD (modular 
 - Em `staging/prod`, ajuste `APP_CORS_ALLOWED_ORIGINS` para os domínios reais do frontend web.
 - Para mobile React Native nativo, CORS normalmente não se aplica, mas para web/admin no browser se aplica.
 
+## Auth: Email e Reset de Senha
+
+- Cadastro (`POST /api/v1/auth/signup`) dispara email assíncrono de boas-vindas.
+- Fluxo de esqueci minha senha:
+  - `POST /api/v1/auth/forgot-password` (sempre responde 202 para evitar enumeração de usuários)
+  - `POST /api/v1/auth/reset-password` (troca senha com token)
+- O token de reset é persistido com hash (`tb_password_reset_tokens`) e expiração.
+- Ao redefinir senha, refresh tokens ativos do usuário são revogados.
+
+Variáveis principais:
+
+- `AUTH_PASSWORD_RESET_TOKEN_TTL_SECONDS`
+- `AUTH_LOGIN_URL`
+- `AUTH_RESET_PASSWORD_URL` (aceita `%s` para injetar token)
+- `APP_MAIL_ENABLED`
+- `APP_MAIL_HOST`
+- `APP_MAIL_PORT`
+- `APP_MAIL_USERNAME`
+- `APP_MAIL_FROM`
+- `APP_MAIL_PASSWORD`
+
 ## Testes
 
 - `./mvnw test`
 
 ## Documentação de API
 
-- Collection Postman oficial: `docs/postman/servicepro-backend.postman_collection.json`
+- Collections Postman oficiais:
+  - `docs/postman/servicepro-backend.local.postman_collection.json`
+  - `docs/postman/servicepro-backend.prod.postman_collection.json`
 - Variáveis da collection:
   - `baseUrl` para endpoints da API
   - `managementBaseUrl` para endpoints Actuator
@@ -57,7 +81,7 @@ Backend do ServicePro com Java 25 + Spring Boot 3.5.6, arquitetura DDD (modular 
 
 ## Deploy em VPS Ubuntu (GitHub Actions)
 
-O pipeline em `.github/workflows/ci.yml` faz:
+O pipeline em `.github/workflows/backend-ci.yml` faz:
 
 1. lint
 2. test
@@ -80,6 +104,7 @@ O pipeline em `.github/workflows/ci.yml` faz:
 - `GHCR_USERNAME`: usuário com acesso ao pacote no GHCR
 - `GHCR_TOKEN`: token com permissão de leitura de pacotes (`read:packages`)
 - `VPS_ENV_PRODUCTION`: conteúdo completo do `.env.production` (multi-line)
+- `VPS_ENV_PRODUCTION_B64`: alternativa em Base64 para o `.env.production`
 
 ### Bootstrap inicial da VPS (uma vez)
 
