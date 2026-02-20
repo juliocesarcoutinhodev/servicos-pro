@@ -24,7 +24,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -97,6 +97,7 @@ function InfoRow({ icon, label, value, isLast = false }: InfoRowProps) {
 export default function ClientProfileScreen() {
   const router = useRouter();
   const { signOut } = useAuth();
+  const insets = useSafeAreaInsets();
 
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -174,11 +175,11 @@ export default function ClientProfileScreen() {
   const firstName = user.name.split(" ")[0];
 
   return (
-    <View className="flex-1 bg-[#F8FAFC]">
+    <View style={{ flex: 1, backgroundColor: "#1E40AF" }}>
       <StatusBar style="light" />
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 32 }}
+        contentContainerStyle={{ paddingBottom: 32, backgroundColor: "#F8FAFC" }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -188,11 +189,10 @@ export default function ClientProfileScreen() {
         }
       >
         {/* ── Hero Header ─────────────────────────────────────────────────── */}
-        <SafeAreaView edges={["top"]} style={{ backgroundColor: "transparent" }}>
-          <LinearGradient
-            colors={["#1E40AF", "#3B82F6"]}
-            style={{ paddingTop: 16, paddingBottom: 40, paddingHorizontal: 24 }}
-          >
+        <LinearGradient
+          colors={["#1E40AF", "#3B82F6"]}
+          style={{ paddingTop: insets.top + 16, paddingBottom: 40, paddingHorizontal: 24 }}
+        >
           {/* Navigation */}
           <View className="flex-row items-center justify-between mb-8">
             <TouchableOpacity
@@ -241,7 +241,6 @@ export default function ClientProfileScreen() {
             </View>
           </View>
         </LinearGradient>
-        </SafeAreaView>
 
         {/* ── Content ─────────────────────────────────────────────────────── */}
         <View className="px-6 -mt-4">
