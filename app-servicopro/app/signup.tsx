@@ -5,11 +5,12 @@ import { UserRole } from "@/types/auth";
 import {
   extractApiError,
   extractFieldErrors,
+  formatPhoneMask,
   formatPhoneToE164,
 } from "@/utils/apiError";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { Briefcase, ChevronLeft, User } from "lucide-react-native";
+import { Briefcase, ChevronLeft, Lock, Mail, Phone, User } from "lucide-react-native";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Keyboard,
@@ -63,8 +64,8 @@ export default function SignupScreen() {
     const digits = phone.replace(/\D/g, "");
     if (!digits) {
       newErrors.phone = "Informe seu telefone";
-    } else if (digits.length < 10 || digits.length > 13) {
-      newErrors.phone = "Telefone inválido";
+    } else if (digits.length < 10 || digits.length > 11) {
+      newErrors.phone = "Telefone inválido. Ex: (11) 99999-9999";
     }
     if (!password) {
       newErrors.password = "Informe uma senha";
@@ -215,62 +216,96 @@ export default function SignupScreen() {
               <Text className="text-red-500 text-sm -mt-4 mb-4">{errors.role}</Text>
             )}
 
-            <Input
-              label="Nome completo"
-              placeholder="Digite seu nome completo"
-              autoCapitalize="words"
-              autoComplete="name"
-              value={name}
-              onChangeText={(v) => { setName(v); clearFieldError("name"); }}
-              error={errors.name}
-            />
+            <View className="relative mb-1">
+              <View className="absolute left-4 z-10" style={{ top: 38 }}>
+                <User size={18} color="#94A3B8" />
+              </View>
+              <Input
+                label="Nome completo"
+                placeholder="Digite seu nome completo"
+                autoCapitalize="words"
+                autoComplete="name"
+                value={name}
+                onChangeText={(v) => { setName(v); clearFieldError("name"); }}
+                error={errors.name}
+                inputClassName="pl-11"
+              />
+            </View>
 
-            <Input
-              label="Email"
-              placeholder="seu@email.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-              value={email}
-              onChangeText={(v) => { setEmail(v); clearFieldError("email"); }}
-              error={errors.email}
-            />
+            <View className="relative mb-1">
+              <View className="absolute left-4 z-10" style={{ top: 38 }}>
+                <Mail size={18} color="#94A3B8" />
+              </View>
+              <Input
+                label="Email"
+                placeholder="seu@email.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+                value={email}
+                onChangeText={(v) => { setEmail(v); clearFieldError("email"); }}
+                error={errors.email}
+                inputClassName="pl-11"
+              />
+            </View>
 
-            <Input
-              label="Telefone"
-              placeholder="(00) 00000-0000"
-              keyboardType="phone-pad"
-              autoComplete="tel"
-              value={phone}
-              onChangeText={(v) => { setPhone(v); clearFieldError("phone"); }}
-              error={errors.phone}
-            />
+            <View className="relative mb-1">
+              <View className="absolute left-4 z-10" style={{ top: 38 }}>
+                <Phone size={18} color="#94A3B8" />
+              </View>
+              <Input
+                label="Telefone"
+                placeholder="(00) 00000-0000"
+                keyboardType="phone-pad"
+                autoComplete="tel"
+                value={phone}
+                onChangeText={(v) => {
+                  setPhone(formatPhoneMask(v));
+                  clearFieldError("phone");
+                }}
+                error={errors.phone}
+                inputClassName="pl-11"
+                maxLength={15}
+              />
+            </View>
 
-            <Input
-              label="Senha"
-              placeholder="Mínimo 8 caracteres"
-              secureTextEntry
-              showPasswordToggle
-              value={password}
-              onChangeText={(v) => { setPassword(v); clearFieldError("password"); }}
-              error={errors.password}
-              onFocus={() => {
-                setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 200);
-              }}
-            />
+            <View className="relative mb-1">
+              <View className="absolute left-4 z-10" style={{ top: 38 }}>
+                <Lock size={18} color="#94A3B8" />
+              </View>
+              <Input
+                label="Senha"
+                placeholder="Mínimo 8 caracteres"
+                secureTextEntry
+                showPasswordToggle
+                value={password}
+                onChangeText={(v) => { setPassword(v); clearFieldError("password"); }}
+                error={errors.password}
+                inputClassName="pl-11"
+                onFocus={() => {
+                  setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 200);
+                }}
+              />
+            </View>
 
-            <Input
-              label="Confirmar senha"
-              placeholder="Digite a senha novamente"
-              secureTextEntry
-              showPasswordToggle
-              value={confirmPassword}
-              onChangeText={(v) => { setConfirmPassword(v); clearFieldError("confirmPassword"); }}
-              error={errors.confirmPassword}
-              onFocus={() => {
-                setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 200);
-              }}
-            />
+            <View className="relative mb-1">
+              <View className="absolute left-4 z-10" style={{ top: 38 }}>
+                <Lock size={18} color="#94A3B8" />
+              </View>
+              <Input
+                label="Confirmar senha"
+                placeholder="Digite a senha novamente"
+                secureTextEntry
+                showPasswordToggle
+                value={confirmPassword}
+                onChangeText={(v) => { setConfirmPassword(v); clearFieldError("confirmPassword"); }}
+                error={errors.confirmPassword}
+                inputClassName="pl-11"
+                onFocus={() => {
+                  setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 200);
+                }}
+              />
+            </View>
 
             {/* Terms */}
             <TouchableOpacity
