@@ -1,92 +1,234 @@
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { useRouter } from "expo-router";
+import { getCategoryMeta } from "@/constants/categoryMeta";
+import { getProviderProfile, listProviderReviews } from "@/services/apiClient";
+import { ProviderProfile, ProviderReview } from "@/types";
+import { extractApiError } from "@/utils/apiError";
+import { LinearGradient } from "expo-linear-gradient";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   Award,
   ChevronLeft,
   Clock,
-  MapPin,
   MessageCircle,
   Phone,
   Shield,
   Star,
+  UserCircle2,
+  Wrench,
 } from "lucide-react-native";
-import React from "react";
-import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 
-const services = [
-  { name: "Instalação de tomadas", price: "R$ 50" },
-  { name: "Troca de disjuntores", price: "R$ 80" },
-  { name: "Instalação de chuveiro", price: "R$ 120" },
-  { name: "Reparo de fiação", price: "R$ 150" },
-];
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-const reviews = [
-  {
-    id: "1",
-    name: "Ana Paula",
-    rating: 5,
-    comment: "Excelente profissional! Muito pontual e cuidadoso.",
-    date: "2 dias atrás",
-  },
-  {
-    id: "2",
-    name: "Roberto Costa",
-    rating: 5,
-    comment: "Resolveu o problema rapidamente. Recomendo!",
-    date: "1 semana atrás",
-  },
-  {
-    id: "3",
-    name: "Mariana Silva",
-    rating: 4,
-    comment: "Bom trabalho, preço justo.",
-    date: "2 semanas atrás",
-  },
-];
+function getInitials(name: string): string {
+  const parts = name.trim().split(" ");
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function formatPrice(cents: number): string {
+  return (cents / 100).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
+
+function formatReviewDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function Stars({ rating, size = 16 }: { rating: number; size?: number }) {
+  return (
+    <View className="flex-row gap-0.5">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Star
+          key={i}
+          size={size}
+          color="#FACC15"
+          fill={i <= Math.round(rating) ? "#FACC15" : "none"}
+        />
+      ))}
+    </View>
+  );
+}
+
+// ── Main Screen ───────────────────────────────────────────────────────────────
 
 export default function ProfessionalProfileScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { professionalId } = useLocalSearchParams<{ professionalId: string }>();
+
+  const [profile, setProfile] = useState<ProviderProfile | null>(null);
+  const [reviews, setReviews] = useState<ProviderReview[]>([]);
+  const [totalReviews, setTotalReviews] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadData = useCallback(
+    async (silent = false) => {
+      if (!professionalId) return;
+      if (!silent) setLoading(true);
+      setError(null);
+      try {
+        const [prof, reviewPage] = await Promise.all([
+          getProviderProfile(professionalId),
+          listProviderReviews(professionalId, { size: 5 }),
+        ]);
+        setProfile(prof);
+        setReviews(reviewPage.content);
+        setTotalReviews(reviewPage.totalElements);
+      } catch (err) {
+        setError(extractApiError(err));
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [professionalId]
+  );
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadData(true);
+  }, [loadData]);
+
+  // ── Loading ───────────────────────────────────────────────────────────────
+
+  if (loading) {
+    return (
+      <View className="flex-1 bg-[#F8FAFC] items-center justify-center">
+        <StatusBar style="light" />
+        <ActivityIndicator size="large" color="#3B82F6" />
+        <Text className="mt-4 text-[#64748B]">Carregando perfil...</Text>
+      </View>
+    );
+  }
+
+  // ── Error ─────────────────────────────────────────────────────────────────
+
+  if (error || !profile) {
+    return (
+      <View className="flex-1 bg-[#F8FAFC] items-center justify-center px-8">
+        <StatusBar style="dark" />
+        <UserCircle2 size={64} color="#CBD5E1" />
+        <Text className="text-lg font-semibold text-[#1E293B] mt-4 mb-2">
+          Ops! Algo deu errado
+        </Text>
+        <Text className="text-[#64748B] text-center mb-6">{error}</Text>
+        <TouchableOpacity
+          onPress={() => loadData()}
+          className="bg-[#3B82F6] px-8 py-3 rounded-2xl mb-4"
+        >
+          <Text className="text-white font-semibold">Tentar novamente</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text className="text-[#64748B]">Voltar</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const initials = getInitials(profile.name);
+  const specialty = profile.categoryNames?.join(", ") || "Profissional";
+  const { colors } = getCategoryMeta(profile.categoryNames?.[0] ?? "");
 
   return (
-    <SafeAreaView className="flex-1 bg-[#F8FAFC]" edges={["top"]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header Image */}
+    <View className="flex-1 bg-[#F8FAFC]">
+      <StatusBar style="light" />
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#3B82F6"
+          />
+        }
+      >
+        {/* ── Hero Header ──────────────────────────────────────────────────── */}
         <View className="relative">
-          <Image
-            source={{
-              uri: "https://images.unsplash.com/photo-1601462904263-f2fa0c851cb9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBlbGVjdHJpY2lhbiUyMHBvcnRyYWl0fGVufDF8fHx8MTc2NzQ4ODA4OXww&ixlib=rb-4.1.0&q=80&w=1080",
-            }}
-            className="w-full h-64"
-            resizeMode="cover"
+          <LinearGradient
+            colors={["#1E40AF", "#3B82F6"]}
+            style={{ height: 200 + insets.top }}
           />
           <TouchableOpacity
             onPress={() => router.back()}
-            className="absolute top-12 left-6 w-10 h-10 rounded-full bg-white/90 items-center justify-center shadow-lg"
+            style={{ top: insets.top + 16 }}
+            className="absolute left-6 w-10 h-10 rounded-full bg-white/90 items-center justify-center shadow-lg"
           >
             <ChevronLeft size={24} color="#1F2937" />
           </TouchableOpacity>
+
+          {/* Avatar com iniciais */}
+          <View className="absolute -bottom-16 self-center items-center">
+            <LinearGradient
+              colors={colors}
+              className="w-32 h-32 rounded-2xl border-4 border-white shadow-lg items-center justify-center"
+            >
+              <Text className="text-white text-4xl font-bold">{initials}</Text>
+            </LinearGradient>
+          </View>
         </View>
 
-        {/* Profile Info */}
-        <View className="px-6 -mt-8">
+        {/* ── Profile Card ─────────────────────────────────────────────────── */}
+        <View className="px-6 mt-20 pb-2">
           <Card variant="elevated">
-            <View className="flex-row items-start justify-between mb-4">
-              <View className="flex-1">
-                <Text className="text-2xl font-bold mb-1">João Santos</Text>
-                <Text className="text-[#64748B] mb-2">Eletricista</Text>
-                <View className="flex-row items-center gap-4 flex-wrap">
-                  <View className="flex-row items-center gap-1">
-                    <Star size={20} color="#FACC15" fill="#FACC15" />
-                    <Text className="font-semibold">4.8</Text>
-                    <Text className="text-[#64748B]">(127 avaliações)</Text>
+            <View className="items-center mb-4">
+              <Text className="text-2xl font-bold text-[#1E293B] mb-1 text-center">
+                {profile.name}
+              </Text>
+              <Text className="text-[#64748B] mb-3">{specialty}</Text>
+
+              <View className="flex-row items-center gap-4 flex-wrap justify-center">
+                {profile.averageRating !== null ? (
+                  <View className="flex-row items-center gap-1.5">
+                    <Stars rating={profile.averageRating} size={18} />
+                    <Text className="font-semibold text-[#1E293B]">
+                      {profile.averageRating.toFixed(1)}
+                    </Text>
+                    <Text className="text-[#64748B]">
+                      ({profile.totalReviews} avaliações)
+                    </Text>
                   </View>
+                ) : (
+                  <Text className="text-[#64748B]">Sem avaliações ainda</Text>
+                )}
+                <View className="flex-row items-center gap-1.5">
+                  <View
+                    className={`w-2.5 h-2.5 rounded-full ${
+                      profile.active ? "bg-[#22C55E]" : "bg-[#CBD5E1]"
+                    }`}
+                  />
+                  <Text
+                    className={
+                      profile.active ? "text-[#22C55E]" : "text-[#94A3B8]"
+                    }
+                  >
+                    {profile.active ? "Disponível" : "Indisponível"}
+                  </Text>
                 </View>
-              </View>
-              <View className="flex-row items-center gap-1">
-                <View className="w-3 h-3 rounded-full bg-[#22C55E]" />
-                <Text className="text-[#22C55E]">Online</Text>
               </View>
             </View>
 
@@ -96,104 +238,131 @@ export default function ProfessionalProfileScreen() {
                 <View className="w-10 h-10 rounded-full bg-[#3B82F6]/10 items-center justify-center mb-2">
                   <Award size={20} color="#3B82F6" />
                 </View>
-                <Text className="text-[#64748B]">312</Text>
+                <Text className="font-semibold text-[#1E293B]">
+                  {profile.totalServicesCompleted ?? "—"}
+                </Text>
                 <Text className="text-[#64748B] text-sm">Serviços</Text>
               </View>
               <View className="flex-1 items-center">
                 <View className="w-10 h-10 rounded-full bg-[#22C55E]/10 items-center justify-center mb-2">
                   <Shield size={20} color="#22C55E" />
                 </View>
-                <Text className="text-[#64748B]">98%</Text>
+                <Text className="font-semibold text-[#1E293B]">
+                  {profile.approvalRate !== null
+                    ? `${profile.approvalRate}%`
+                    : "—"}
+                </Text>
                 <Text className="text-[#64748B] text-sm">Aprovação</Text>
               </View>
               <View className="flex-1 items-center">
                 <View className="w-10 h-10 rounded-full bg-[#FB923C]/10 items-center justify-center mb-2">
                   <Clock size={20} color="#FB923C" />
                 </View>
-                <Text className="text-[#64748B]">5 anos</Text>
-                <Text className="text-[#64748B] text-sm">Experiência</Text>
+                <Text className="font-semibold text-[#1E293B]">
+                  {profile.services.length}
+                </Text>
+                <Text className="text-[#64748B] text-sm">Tipos de serviço</Text>
               </View>
             </View>
           </Card>
         </View>
 
-        {/* About */}
-        <View className="px-6 mt-4">
-          <Card>
-            <Text className="text-lg font-semibold mb-3">Sobre</Text>
-            <Text className="text-[#64748B] leading-6">
-              Eletricista profissional com 5 anos de experiência. Especializado
-              em instalações residenciais e comerciais. Atendimento rápido e
-              garantia de qualidade.
-            </Text>
-          </Card>
-        </View>
+        {/* ── Bio ──────────────────────────────────────────────────────────── */}
+        {profile.bio ? (
+          <View className="px-6 mt-4">
+            <Card>
+              <Text className="text-lg font-semibold mb-3 text-[#1E293B]">
+                Sobre
+              </Text>
+              <Text className="text-[#64748B] leading-6">{profile.bio}</Text>
+            </Card>
+          </View>
+        ) : null}
 
-        {/* Location */}
-        <View className="px-6 mt-4">
-          <Card>
-            <View className="flex-row items-center gap-3 mb-2">
-              <MapPin size={20} color="#3B82F6" />
-              <Text className="text-lg font-semibold">Localização</Text>
-            </View>
-            <Text className="text-[#64748B]">Centro, São Paulo - SP</Text>
-            <Text className="text-[#64748B]">0.8 km de distância</Text>
-          </Card>
-        </View>
-
-        {/* Services */}
-        <View className="px-6 mt-4">
-          <Card>
-            <Text className="text-lg font-semibold mb-4">
-              Serviços oferecidos
-            </Text>
-            {services.map((service, index) => (
-              <View
-                key={index}
-                className="flex-row items-center justify-between py-3 border-b border-gray-100"
-                style={{
-                  borderBottomWidth: index === services.length - 1 ? 0 : 1,
-                }}
-              >
-                <Text className="text-[#64748B]">{service.name}</Text>
-                <Text className="text-[#3B82F6] font-semibold">
-                  {service.price}
+        {/* ── Serviços ─────────────────────────────────────────────────────── */}
+        {profile.services.length > 0 && (
+          <View className="px-6 mt-4">
+            <Card>
+              <View className="flex-row items-center gap-2 mb-4">
+                <Wrench size={18} color="#3B82F6" />
+                <Text className="text-lg font-semibold text-[#1E293B]">
+                  Serviços oferecidos
                 </Text>
               </View>
-            ))}
-          </Card>
-        </View>
-
-        {/* Reviews */}
-        <View className="px-6 mt-4 mb-24">
-          <Card>
-            <Text className="text-lg font-semibold mb-4">Avaliações (127)</Text>
-            {reviews.map((review) => (
-              <View
-                key={review.id}
-                className="pb-4 mb-4 border-b border-gray-100"
-                style={{
-                  borderBottomWidth:
-                    review.id === reviews[reviews.length - 1].id ? 0 : 1,
-                }}
-              >
-                <View className="flex-row items-center justify-between mb-2">
-                  <Text className="font-semibold">{review.name}</Text>
-                  <View className="flex-row items-center gap-1">
-                    {[...Array(review.rating)].map((_, i) => (
-                      <Star key={i} size={16} color="#FACC15" fill="#FACC15" />
-                    ))}
+              {profile.services.map((svc, index) => (
+                <View
+                  key={svc.id}
+                  className="flex-row items-center justify-between py-3"
+                  style={{
+                    borderBottomWidth:
+                      index < profile.services.length - 1 ? 1 : 0,
+                    borderBottomColor: "#F1F5F9",
+                  }}
+                >
+                  <View className="flex-1 mr-4">
+                    <Text className="text-[#1E293B] font-medium">
+                      {svc.name}
+                    </Text>
+                    {svc.description ? (
+                      <Text
+                        className="text-[#64748B] text-sm mt-0.5"
+                        numberOfLines={1}
+                      >
+                        {svc.description}
+                      </Text>
+                    ) : null}
                   </View>
+                  <Text className="text-[#3B82F6] font-semibold">
+                    {formatPrice(svc.priceCents)}
+                  </Text>
                 </View>
-                <Text className="text-[#64748B] mb-1">{review.comment}</Text>
-                <Text className="text-[#64748B] text-sm">{review.date}</Text>
-              </View>
-            ))}
+              ))}
+            </Card>
+          </View>
+        )}
+
+        {/* ── Avaliações ───────────────────────────────────────────────────── */}
+        <View className="px-6 mt-4 mb-32">
+          <Card>
+            <View className="flex-row items-center gap-2 mb-4">
+              <Star size={18} color="#FACC15" fill="#FACC15" />
+              <Text className="text-lg font-semibold text-[#1E293B]">
+                Avaliações{totalReviews > 0 ? ` (${totalReviews})` : ""}
+              </Text>
+            </View>
+
+            {reviews.length === 0 ? (
+              <Text className="text-[#64748B] text-center py-4">
+                Nenhuma avaliação ainda.
+              </Text>
+            ) : (
+              reviews.map((review, index) => (
+                <View
+                  key={review.id}
+                  className="pb-4 mb-4"
+                  style={{
+                    borderBottomWidth: index < reviews.length - 1 ? 1 : 0,
+                    borderBottomColor: "#F1F5F9",
+                  }}
+                >
+                  <View className="flex-row items-center justify-between mb-2">
+                    <Text className="font-semibold text-[#1E293B]">
+                      {review.clientName}
+                    </Text>
+                    <Stars rating={review.rating} size={14} />
+                  </View>
+                  <Text className="text-[#64748B] mb-1">{review.comment}</Text>
+                  <Text className="text-[#94A3B8] text-xs">
+                    {formatReviewDate(review.createdAt)}
+                  </Text>
+                </View>
+              ))
+            )}
           </Card>
         </View>
       </ScrollView>
 
-      {/* Bottom Actions */}
+      {/* ── Bottom Actions ───────────────────────────────────────────────────── */}
       <SafeAreaView
         edges={["bottom"]}
         className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200"
@@ -207,7 +376,12 @@ export default function ProfessionalProfileScreen() {
               <MessageCircle size={20} color="#3B82F6" />
             </TouchableOpacity>
             <Button
-              onPress={() => router.push("/(client)/service-request")}
+              onPress={() =>
+                router.push({
+                  pathname: "/(client)/service-request",
+                  params: { professionalId: profile.id },
+                })
+              }
               variant="primary"
               className="flex-1"
             >
@@ -216,6 +390,6 @@ export default function ProfessionalProfileScreen() {
           </View>
         </View>
       </SafeAreaView>
-    </SafeAreaView>
+    </View>
   );
 }

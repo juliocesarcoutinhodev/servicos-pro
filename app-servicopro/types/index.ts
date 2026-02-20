@@ -124,6 +124,37 @@ export interface ProviderSummary {
   serviceCount: number;
 }
 
+/** Service item embedded inside ProviderProfile */
+export interface ProviderProfileService {
+  id: string;
+  name: string;
+  description: string;
+  priceCents: number;
+}
+
+/** Full provider profile returned by GET /api/v1/providers/{id} */
+export interface ProviderProfile {
+  id: string;
+  name: string;
+  categoryNames: string[];
+  bio: string | null;
+  averageRating: number | null;
+  totalReviews: number;
+  totalServicesCompleted: number | null;
+  approvalRate: number | null;
+  active: boolean;
+  services: ProviderProfileService[];
+}
+
+/** Review item returned by GET /api/v1/providers/{id}/reviews */
+export interface ProviderReview {
+  id: string;
+  clientName: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+}
+
 /** Paginated response wrapper */
 export interface Page<T> {
   content: T[];

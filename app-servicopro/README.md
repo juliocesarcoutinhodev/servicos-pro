@@ -38,33 +38,38 @@ app-servicopro/
 │   ├── index.tsx                    # Redirect → /login
 │   ├── login.tsx                    # Tela de login ✅ integrado
 │   ├── signup.tsx                   # Tela de cadastro ✅ integrado
+│   ├── forgot-password.tsx          # Esqueci minha senha ✅ integrado (OTP)
+│   ├── verify-otp.tsx               # Verificação de código OTP ✅ integrado
+│   ├── reset-password.tsx           # Redefinir senha ✅ integrado
 │   ├── (client)/                    # Rotas autenticadas — role: CLIENT
 │   │   ├── _layout.tsx
-│   │   ├── home.tsx                 # Home do cliente ✅ nome real do usuário
+│   │   ├── home.tsx                 # Home do cliente ✅ categorias + profissionais reais
 │   │   ├── profile.tsx              # Perfil do cliente ✅ dados reais da API
-│   │   ├── categories.tsx           # Categorias de serviço (skeleton)
-│   │   ├── professionals.tsx        # Lista de profissionais (skeleton)
-│   │   ├── professional-profile.tsx # Perfil do profissional (skeleton)
-│   │   ├── service-request.tsx      # Solicitação de serviço (skeleton)
-│   │   └── payment.tsx              # Pagamento (skeleton)
+│   │   ├── categories.tsx           # Categorias de serviço 🚧 skeleton
+│   │   ├── professionals.tsx        # Lista de profissionais ✅ integrado + filtro
+│   │   ├── professional-profile.tsx # Perfil do profissional ✅ integrado
+│   │   ├── service-request.tsx      # Solicitação de serviço 🚧 skeleton
+│   │   └── payment.tsx              # Pagamento 🚧 skeleton
 │   └── (provider)/                  # Rotas autenticadas — role: PROVIDER
 │       ├── _layout.tsx
-│       ├── home.tsx                 # Home do prestador ✅ nome real do usuário
-│       ├── profile.tsx              # Perfil do prestador ✅ dados reais da API
-│       └── requests.tsx             # Solicitações recebidas (skeleton)
+│       ├── home.tsx                 # Home do prestador ✅ nome real + atalhos
+│       ├── profile.tsx              # Perfil do prestador ✅ dados reais + contagem de serviços
+│       ├── my-services.tsx          # Gerenciar serviços ✅ CRUD integrado
+│       └── requests.tsx             # Solicitações recebidas 🚧 skeleton
 ├── components/ui/
 │   ├── Button.tsx                   # Botão reutilizável (variants + loading)
 │   ├── Input.tsx                    # Input com label, erro, toggle de senha
 │   └── Card.tsx                     # Card com sombra padrão
 ├── constants/
-│   └── config.ts                    # API_BASE_URL, rotas, STORAGE_KEYS, TTLs
+│   ├── config.ts                    # API_BASE_URL, rotas, STORAGE_KEYS, TTLs
+│   └── categoryMeta.ts              # Mapa de ícone + cores por nome de categoria
 ├── context/
 │   └── AuthContext.tsx              # AuthProvider + useAuth + route guard
 ├── services/
-│   └── apiClient.ts                 # Axios + interceptors + funções auth
+│   └── apiClient.ts                 # Axios + interceptors + todas as funções de API
 ├── types/
 │   ├── auth.ts                      # DTOs de autenticação (espelham o backend)
-│   └── index.ts                     # Tipos de domínio (User, Professional…)
+│   └── index.ts                     # Tipos de domínio (ServiceCategory, ProviderService, ProviderProfile…)
 └── utils/
     ├── cn.ts                        # Merge de classes Tailwind (clsx)
     └── apiError.ts                  # Extratores de erro, máscara de telefone
@@ -97,15 +102,46 @@ Cadastro / Login
                               └─────────────────────┘
 ```
 
+### Fluxo de Recuperação de Senha (OTP)
+
+```
+forgot-password.tsx
+    └─► POST /auth/forgot-password { email }
+        → 202 (sempre, independente de existir)
+
+verify-otp.tsx
+    └─► Usuário digita código de 6 dígitos recebido por email
+
+reset-password.tsx
+    └─► POST /auth/reset-password { email, code, newPassword }
+        → 200 → redireciona para login
+```
+
 ### Endpoints Integrados
 
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| `POST` | `/api/v1/auth/signup` | Cadastro (`name`, `email`, `phone`, `password`, `role`) |
-| `POST` | `/api/v1/auth/login` | Login — retorna `accessToken` + cookie `refresh_token` |
-| `POST` | `/api/v1/auth/refresh` | Rotação silenciosa (cookie-only, sem body) |
-| `POST` | `/api/v1/auth/logout` | Logout — revoga cookie no servidor |
-| `GET`  | `/api/v1/auth/me` | Dados do usuário autenticado |
+| Método | Endpoint | Auth | Descrição |
+|--------|----------|------|-----------|
+| `POST` | `/api/v1/auth/signup` | — | Cadastro (`name`, `email`, `phone`, `password`, `role`) |
+| `POST` | `/api/v1/auth/login` | — | Login — retorna `accessToken` + cookie `refresh_token` |
+| `POST` | `/api/v1/auth/refresh` | Cookie | Rotação silenciosa (cookie-only, sem body) |
+| `POST` | `/api/v1/auth/logout` | Cookie | Logout — revoga cookie no servidor |
+| `GET`  | `/api/v1/auth/me` | Bearer | Dados do usuário autenticado |
+| `POST` | `/api/v1/auth/forgot-password` | — | Envia código OTP por email |
+| `POST` | `/api/v1/auth/reset-password` | — | Redefine senha com código OTP |
+
+### Endpoints de Serviços e Prestadores
+
+| Método | Endpoint | Auth | Descrição |
+|--------|----------|------|-----------|
+| `GET`  | `/api/v1/services/categories` | — | Lista todas as categorias |
+| `POST` | `/api/v1/services/categories` | Bearer | Cria nova categoria |
+| `GET`  | `/api/v1/providers` | — | Lista prestadores ativos (paginado, filtro por `categoryId`) |
+| `GET`  | `/api/v1/providers/{id}` | — | Perfil público completo de um prestador |
+| `GET`  | `/api/v1/providers/{id}/reviews` | — | Avaliações paginadas de um prestador |
+| `GET`  | `/api/v1/providers/services` | Bearer | Lista serviços do prestador autenticado |
+| `POST` | `/api/v1/providers/services` | Bearer | Cria novo serviço do prestador |
+| `PUT`  | `/api/v1/providers/services/{id}` | Bearer | Atualiza serviço do prestador |
+| `DELETE` | `/api/v1/providers/services/{id}` | Bearer | Remove serviço do prestador |
 
 **Base URL produção:** `http://vps7348.integrator.host:8080`
 
@@ -185,26 +221,41 @@ O interceptor de resposta Axios em `services/apiClient.ts`:
 |------|---------|--------|
 | Login | `app/login.tsx` | ✅ Integrado |
 | Cadastro | `app/signup.tsx` | ✅ Integrado |
-| Esqueci minha senha | — | 🔜 Aguardando backend |
-| Redefinir senha | — | 🔜 Aguardando backend |
+| Esqueci minha senha | `app/forgot-password.tsx` | ✅ Integrado (OTP) |
+| Verificar OTP | `app/verify-otp.tsx` | ✅ Integrado |
+| Redefinir senha | `app/reset-password.tsx` | ✅ Integrado |
 
 ### Cliente (role: CLIENT)
 | Tela | Arquivo | Status |
 |------|---------|--------|
-| Home | `(client)/home.tsx` | ✅ Nome real do usuário |
+| Home | `(client)/home.tsx` | ✅ Categorias e profissionais reais do backend |
 | Perfil | `(client)/profile.tsx` | ✅ Dados reais da API `/me` |
 | Categorias | `(client)/categories.tsx` | 🚧 Skeleton |
-| Profissionais | `(client)/professionals.tsx` | 🚧 Skeleton |
-| Perfil do profissional | `(client)/professional-profile.tsx` | 🚧 Skeleton |
+| Lista de profissionais | `(client)/professionals.tsx` | ✅ Integrado — filtro por categoria, busca e ordenação |
+| Perfil do profissional | `(client)/professional-profile.tsx` | ✅ Integrado — serviços e avaliações reais |
 | Solicitar serviço | `(client)/service-request.tsx` | 🚧 Skeleton |
 | Pagamento | `(client)/payment.tsx` | 🚧 Skeleton |
 
 ### Prestador (role: PROVIDER)
 | Tela | Arquivo | Status |
 |------|---------|--------|
-| Home | `(provider)/home.tsx` | ✅ Nome real do usuário |
-| Perfil | `(provider)/profile.tsx` | ✅ Dados reais da API `/me` |
+| Home | `(provider)/home.tsx` | ✅ Nome real + atalho para Meus Serviços |
+| Perfil | `(provider)/profile.tsx` | ✅ Dados reais + contagem de serviços clicável |
+| Meus Serviços | `(provider)/my-services.tsx` | ✅ CRUD completo integrado |
 | Solicitações | `(provider)/requests.tsx` | 🚧 Skeleton |
+
+---
+
+## 🗺️ Mapa de Categorias (`constants/categoryMeta.ts`)
+
+Arquivo central que associa o **nome da categoria** (vindo do backend) a um **ícone Lucide** e **cores de gradiente**. Usado em todas as telas que exibem categorias.
+
+```ts
+// Para adicionar uma nova categoria, basta adicionar uma entrada:
+"pintor": { icon: PaintBucket, colors: ["#3B82F6", "#6366F1"] }
+```
+
+Categorias mapeadas: `eletricista`, `encanador`, `diarista`, `pintor`, `montador de moveis`, `jardineiro`, `tecnico de ar-condicionado`, `marido de aluguel`, `mecanica`, `cabeleireiro`. Qualquer categoria não mapeada recebe ícone e cor padrão (genérico).
 
 ---
 
@@ -256,14 +307,13 @@ pnpm web
   onChangeText={setEmail}
   error={errors.email}
   showPasswordToggle   // apenas para campos de senha
-  inputClassName="pl-11"  // padding para ícone à esquerda
 />
 ```
 
 ### Card
 
 ```tsx
-<Card className="mb-4">
+<Card variant="elevated" className="mb-4">
   <Text>Conteúdo</Text>
 </Card>
 ```
@@ -293,32 +343,54 @@ pnpm web
 - [x] Route guard baseado em `role` (CLIENT / PROVIDER)
 - [x] Bootstrap de sessão ao iniciar o app (sem flicker)
 - [x] Tratamento de erros: validação (422), credenciais inválidas (401), rate limit (429)
+- [x] Esqueci minha senha com envio de código OTP por email
+- [x] Verificação de OTP e redefinição de senha
 - [x] Tela de perfil do **Cliente** com dados reais do `/auth/me`
-- [x] Tela de perfil do **Prestador** com dados reais do `/auth/me`
+- [x] Tela de perfil do **Prestador** com dados reais do `/auth/me` + contagem de serviços
 - [x] Nome real do usuário nas homes (CLIENT e PROVIDER)
-- [x] Pull-to-refresh nas telas de perfil
+- [x] Pull-to-refresh em todas as telas com dados dinâmicos
 - [x] Logout com confirmação e limpeza de cookie + SecureStore
 - [x] Safe area correta (gradiente edge-to-edge sem faixa branca)
-- [x] `useSafeAreaInsets` para posicionamento dinâmico dos botões de navegação
+- [x] **Home do cliente** com categorias reais do backend
+- [x] **Home do cliente** com profissionais disponíveis reais do backend
+- [x] **Lista de profissionais** filtrada por categoria, busca por nome e ordenação
+- [x] **Perfil público do profissional** com serviços e avaliações reais
+- [x] **CRUD de serviços do prestador** — criar, editar, remover com picker de categoria
+- [x] Mapa de ícones/cores por categoria (`constants/categoryMeta.ts`)
+- [x] Skeletons de loading nas telas de listagem
+- [x] Estados de erro com retry em todas as telas de dados
 
 ### Próximas Etapas
-- [ ] Esqueci minha senha (aguardando endpoint backend)
-- [ ] Redefinir senha (aguardando endpoint backend)
-- [ ] Edição de perfil (foto, dados pessoais)
-- [ ] Integração de categorias e busca de profissionais
+- [ ] Tela de categorias do cliente integrada ao backend
 - [ ] Solicitação de serviço (fluxo CLIENT → PROVIDER)
 - [ ] Aceite/recusa de solicitações (PROVIDER)
-- [ ] Sistema de avaliações
+- [ ] Sistema de avaliações (cliente avalia prestador após conclusão)
+- [ ] Edição de perfil (bio, foto)
 - [ ] Notificações push
 - [ ] Chat em tempo real
 - [ ] Upload de imagem de perfil
-- [ ] Geolocalização
+- [ ] Geolocalização ("profissionais próximos" com distância real)
+- [ ] Histórico de serviços realizados
+- [ ] Pagamento integrado
 
 ---
 
 ## 📋 Changelog
 
-### v1.4.0 (atual) — 2026-02-20
+### v1.5.0 (atual) — 2026-02-20
+- ✨ **Home do cliente** — categorias reais do backend com ícones/cores mapeados por nome
+- ✨ **Home do cliente** — profissionais disponíveis reais do backend com avatar em iniciais
+- ✨ **Lista de profissionais** (`professionals.tsx`) — integrado com `GET /api/v1/providers`, filtro por `categoryId`, busca por nome, ordenação (A–Z / melhor avaliados / mais serviços)
+- ✨ **Perfil do profissional** (`professional-profile.tsx`) — integrado com `GET /api/v1/providers/{id}` e `GET /api/v1/providers/{id}/reviews`, exibe serviços reais com preço formatado, avaliações com estrelas, bio, stats
+- ✨ **CRUD de serviços do prestador** (`my-services.tsx`) — tela nova com criação, edição e remoção de serviços via `POST/PUT/DELETE /api/v1/providers/services`, picker de categoria, validação de preço em centavos
+- ✨ **Perfil do prestador** — card "Serviços" agora mostra contagem real e navega para `my-services`
+- ✨ `constants/categoryMeta.ts` — mapa central de ícone + gradiente por nome de categoria
+- ✨ Novos tipos: `ServiceCategory`, `ProviderService`, `ProviderSummary`, `ProviderProfile`, `ProviderProfileService`, `ProviderReview`, `Page<T>`
+- ✨ Novas funções em `apiClient.ts`: `listServiceCategories`, `createServiceCategory`, `listMyProviderServices`, `createProviderService`, `updateProviderService`, `deleteProviderService`, `listProviders`, `getProviderProfile`, `listProviderReviews`
+- ✨ Skeletons de loading nas listagens de categorias e profissionais
+- 🐛 Corrigido "Sem categoria" nos cards de serviço — enriquecimento client-side via `categoryId` + mapa de categorias
+
+### v1.4.0 — 2026-02-20
 - ✨ Tela de perfil do **Cliente** com dados reais do `GET /auth/me`
 - ✨ Tela de perfil do **Prestador** com dados reais do `GET /auth/me`
 - ✨ Nome real do usuário nas homes (CLIENT e PROVIDER) via `useAuth()`
@@ -328,13 +400,12 @@ pnpm web
 - 🐛 Corrigido faixa branca no topo das telas de perfil (`SafeAreaView` → `View` + `useSafeAreaInsets`)
 - ✨ `AuthUser` atualizado com `createdAt` e `active` para espelhar o backend
 - ✨ Formatação de telefone E.164 → `(11) 99470-4876` nas telas de perfil
-- ✨ Formatação de data ISO → `20/02/2026` (ou por extenso no perfil do prestador)
+- ✨ Formatação de data ISO → `20 de fevereiro de 2026` nas telas de perfil
 
 ### v1.3.0 — 2026-02-20
 - ✨ `login.tsx` simplificado — removido seletor de tipo redundante (role vem do JWT)
 - ✨ Ícones nos campos de login e cadastro (Mail, Lock, User, Phone)
-- ✨ Link "Esqueci minha senha" (placeholder, aguardando backend)
-- ✨ Separador visual "ou" entre botões no login
+- ✨ Fluxo completo de recuperação de senha via OTP (`forgot-password` → `verify-otp` → `reset-password`)
 - ✨ `signup.tsx` — máscara de telefone automática em tempo real
 - ✨ `utils/apiError.ts` — tratamento de 429 com `Retry-After`, `formatPhoneMask`, `isRateLimitError`
 - 🐛 Validação de telefone ajustada para 10–11 dígitos (formato BR)

@@ -12,6 +12,8 @@ import {
   CreateProviderServiceRequest,
   CreateServiceCategoryRequest,
   Page,
+  ProviderProfile,
+  ProviderReview,
   ProviderService,
   ProviderSummary,
   ServiceCategory,
@@ -306,6 +308,30 @@ export async function listProviders(params?: {
 }): Promise<Page<ProviderSummary>> {
   const { data } = await apiClient.get<ApiSuccessResponse<Page<ProviderSummary>>>(
     "/api/v1/providers",
+    { params: { page: 0, size: 10, ...params } }
+  );
+  return data.data;
+}
+
+/**
+ * Returns the full public profile of a provider, including their services list.
+ */
+export async function getProviderProfile(id: string): Promise<ProviderProfile> {
+  const { data } = await apiClient.get<ApiSuccessResponse<ProviderProfile>>(
+    `/api/v1/providers/${id}`
+  );
+  return data.data;
+}
+
+/**
+ * Returns paginated reviews for a provider.
+ */
+export async function listProviderReviews(
+  id: string,
+  params?: { page?: number; size?: number }
+): Promise<Page<ProviderReview>> {
+  const { data } = await apiClient.get<ApiSuccessResponse<Page<ProviderReview>>>(
+    `/api/v1/providers/${id}/reviews`,
     { params: { page: 0, size: 10, ...params } }
   );
   return data.data;
