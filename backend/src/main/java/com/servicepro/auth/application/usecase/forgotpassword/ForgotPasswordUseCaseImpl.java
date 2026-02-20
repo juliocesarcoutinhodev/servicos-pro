@@ -3,15 +3,13 @@ package com.servicepro.auth.application.usecase.forgotpassword;
 import com.servicepro.auth.domain.gateway.AccountNotificationGateway;
 import com.servicepro.auth.domain.gateway.PasswordResetTokenGateway;
 import com.servicepro.auth.domain.gateway.RefreshTokenHasher;
-import com.servicepro.auth.domain.gateway.TokenGateway;
 import com.servicepro.auth.domain.gateway.UserGateway;
 import com.servicepro.auth.domain.model.PasswordResetToken;
 import com.servicepro.auth.domain.model.User;
 import com.servicepro.auth.domain.model.valueobject.Email;
-import com.servicepro.auth.infrastructure.config.AuthLinksProperties;
 import com.servicepro.auth.infrastructure.config.AuthPasswordResetProperties;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
+import java.util.Locale;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import lombok.RequiredArgsConstructor;
@@ -24,12 +22,14 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 @RequiredArgsConstructor
 public class ForgotPasswordUseCaseImpl implements ForgotPasswordUseCase {
 
+    private static final int OTP_LENGTH = 6;
+    private static final int OTP_BOUND = 1_000_000;
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
     private final UserGateway userGateway;
-    private final TokenGateway tokenGateway;
     private final RefreshTokenHasher refreshTokenHasher;
     private final PasswordResetTokenGateway passwordResetTokenGateway;
     private final AuthPasswordResetProperties authPasswordResetProperties;
-    private final AuthLinksProperties authLinksProperties;
     private final AccountNotificationGateway accountNotificationGateway;
 
     @Override
@@ -41,40 +41,35 @@ public class ForgotPasswordUseCaseImpl implements ForgotPasswordUseCase {
             return;
         }
 
-        String rawToken = tokenGateway.generateRefreshToken();
-        String tokenHash = refreshTokenHasher.hash(rawToken);
-        OffsetDateTime expiresAt = OffsetDateTime.now(ZoneOffset.UTC)
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        passwordResetTokenGateway.markAllAsUsedByUserId(user.getId(), now);
+
+        String otpCode = generateOtpCode();
+        String tokenHash = refreshTokenHasher.hash(otpCode);
+        OffsetDateTime expiresAt = now
                 .plusSeconds(authPasswordResetProperties.getTokenTtlSeconds());
 
         PasswordResetToken token = PasswordResetToken.issue(user.getId(), tokenHash, expiresAt);
         passwordResetTokenGateway.save(token);
 
-        String resetLink = buildResetLink(rawToken);
-        sendResetEmailAfterCommit(user, resetLink, expiresAt);
+        sendResetEmailAfterCommit(user, otpCode, expiresAt);
     }
 
-    private String buildResetLink(String rawToken) {
-        String encodedToken = URLEncoder.encode(rawToken, StandardCharsets.UTF_8);
-        String baseUrl = authLinksProperties.getResetPasswordUrl();
-
-        if (baseUrl.contains("%s")) {
-            return baseUrl.formatted(encodedToken);
-        }
-
-        String separator = baseUrl.contains("?") ? "&" : "?";
-        return baseUrl + separator + "token=" + encodedToken;
+    private String generateOtpCode() {
+        int rawCode = SECURE_RANDOM.nextInt(OTP_BOUND);
+        return String.format(Locale.ROOT, "%0" + OTP_LENGTH + "d", rawCode);
     }
 
-    private void sendResetEmailAfterCommit(User user, String resetLink, OffsetDateTime expiresAt) {
+    private void sendResetEmailAfterCommit(User user, String otpCode, OffsetDateTime expiresAt) {
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            accountNotificationGateway.sendPasswordResetEmail(user, resetLink, expiresAt);
+            accountNotificationGateway.sendPasswordResetEmail(user, otpCode, expiresAt);
             return;
         }
 
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                accountNotificationGateway.sendPasswordResetEmail(user, resetLink, expiresAt);
+                accountNotificationGateway.sendPasswordResetEmail(user, otpCode, expiresAt);
             }
         });
     }

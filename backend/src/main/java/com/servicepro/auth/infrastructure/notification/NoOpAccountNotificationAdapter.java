@@ -14,7 +14,7 @@ public class NoOpAccountNotificationAdapter implements AccountNotificationGatewa
     }
 
     @Override
-    public void sendPasswordResetEmail(User user, String resetLink, OffsetDateTime expiresAt) {
+    public void sendPasswordResetEmail(User user, String otpCode, OffsetDateTime expiresAt) {
         log.debug("Email de reset ignorado (mail desabilitado). userId={}, expiresAt={}", user.getId(), expiresAt);
     }
 }

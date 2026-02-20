@@ -6,7 +6,8 @@ import java.util.Optional;
 public enum AuthRateLimitAction {
     LOGIN("login", "/api/v1/auth/login"),
     SIGNUP("signup", "/api/v1/auth/signup"),
-    FORGOT_PASSWORD("forgot-password", "/api/v1/auth/forgot-password");
+    FORGOT_PASSWORD("forgot-password", "/api/v1/auth/forgot-password"),
+    RESET_PASSWORD("reset-password", "/api/v1/auth/reset-password");
 
     private final String keySegment;
     private final String path;

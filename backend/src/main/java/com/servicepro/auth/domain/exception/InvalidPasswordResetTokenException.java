@@ -5,6 +5,6 @@ import com.servicepro.shared.domain.exception.NegocioException;
 public class InvalidPasswordResetTokenException extends NegocioException {
 
     public InvalidPasswordResetTokenException() {
-        super("Token de redefinicao de senha invalido ou expirado.");
+        super("Codigo de redefinicao de senha invalido ou expirado.");
     }
 }

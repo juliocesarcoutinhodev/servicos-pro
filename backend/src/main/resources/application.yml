@@ -57,7 +57,6 @@ auth:
     token-ttl-seconds: ${AUTH_PASSWORD_RESET_TOKEN_TTL_SECONDS:1800}
   links:
     login-url: ${AUTH_LOGIN_URL:http://localhost:19006/login}
-    reset-password-url: ${AUTH_RESET_PASSWORD_URL:http://localhost:19006/reset-password?token=%s}
 
 app:
   mail:

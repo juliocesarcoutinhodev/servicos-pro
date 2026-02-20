@@ -92,14 +92,15 @@ class ResetPasswordUseCaseImplTest {
                 now.minusDays(1)
         );
 
-        when(refreshTokenHasher.hash("raw-token")).thenReturn("token-hash");
-        when(passwordResetTokenGateway.findByTokenHash("token-hash")).thenReturn(Optional.of(resetToken));
-        when(userGateway.findById(userId)).thenReturn(Optional.of(user));
+        when(userGateway.findByEmail("joao@email.com")).thenReturn(Optional.of(user));
+        when(refreshTokenHasher.hash("123456")).thenReturn("token-hash");
+        when(passwordResetTokenGateway.findLatestActiveByUserIdAndTokenHash(userId, "token-hash"))
+                .thenReturn(Optional.of(resetToken));
         when(passwordHasher.hash("NovaSenha123")).thenReturn("new-hash");
         when(passwordResetTokenGateway.save(any(PasswordResetToken.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        resetPasswordUseCase.execute(new ResetPasswordCommand("raw-token", "NovaSenha123"));
+        resetPasswordUseCase.execute(new ResetPasswordCommand("joao@email.com", "123456", "NovaSenha123"));
 
         then(userGateway).should().updatePasswordHash(userId, "new-hash");
         then(refreshTokenGateway).should().revokeAllByUserId(userId);
@@ -107,10 +108,10 @@ class ResetPasswordUseCaseImplTest {
 
         ArgumentCaptor<PasswordResetToken> tokenCaptor = ArgumentCaptor.forClass(PasswordResetToken.class);
         then(passwordResetTokenGateway).should().save(tokenCaptor.capture());
-        then(userGateway).should().findById(userId);
+        then(userGateway).should().findByEmail("joao@email.com");
 
         PasswordResetToken persistedToken = tokenCaptor.getValue();
-        then(passwordResetTokenGateway).should().findByTokenHash("token-hash");
+        then(passwordResetTokenGateway).should().findLatestActiveByUserIdAndTokenHash(userId, "token-hash");
         then(passwordHasher).should().hash("NovaSenha123");
 
         assertThat(persistedToken.isUsed()).isTrue();
@@ -118,14 +119,27 @@ class ResetPasswordUseCaseImplTest {
 
     @Test
     void shouldThrowWhenResetTokenIsInvalid() {
-        when(refreshTokenHasher.hash("raw-token")).thenReturn("token-hash");
-        when(passwordResetTokenGateway.findByTokenHash("token-hash")).thenReturn(Optional.empty());
+        UUID userId = UUID.randomUUID();
+        User user = User.restore(
+                userId,
+                "Joao Silva",
+                "joao@email.com",
+                "+5511999999999",
+                "old-hash",
+                Role.CLIENT,
+                true,
+                OffsetDateTime.now(ZoneOffset.UTC).minusDays(1),
+                OffsetDateTime.now(ZoneOffset.UTC).minusDays(1)
+        );
 
-        assertThatThrownBy(() -> resetPasswordUseCase.execute(new ResetPasswordCommand("raw-token", "NovaSenha123")))
+        when(userGateway.findByEmail("joao@email.com")).thenReturn(Optional.of(user));
+        when(refreshTokenHasher.hash("123456")).thenReturn("token-hash");
+        when(passwordResetTokenGateway.findLatestActiveByUserIdAndTokenHash(userId, "token-hash")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> resetPasswordUseCase.execute(new ResetPasswordCommand("joao@email.com", "123456", "NovaSenha123")))
                 .isInstanceOf(InvalidPasswordResetTokenException.class)
-                .hasMessageContaining("Token de redefinicao");
+                .hasMessageContaining("Codigo de redefinicao");
 
-        then(userGateway).shouldHaveNoInteractions();
         then(passwordHasher).shouldHaveNoInteractions();
         then(refreshTokenGateway).shouldHaveNoInteractions();
         then(refreshTokenCacheGateway).shouldHaveNoInteractions();
@@ -133,7 +147,7 @@ class ResetPasswordUseCaseImplTest {
 
     @Test
     void shouldThrowWhenPasswordIsInvalid() {
-        assertThatThrownBy(() -> resetPasswordUseCase.execute(new ResetPasswordCommand("raw-token", "123")))
+        assertThatThrownBy(() -> resetPasswordUseCase.execute(new ResetPasswordCommand("joao@email.com", "123456", "123")))
                 .isInstanceOf(InvalidSignupPasswordException.class)
                 .hasMessageContaining("entre 8 e 72");
 

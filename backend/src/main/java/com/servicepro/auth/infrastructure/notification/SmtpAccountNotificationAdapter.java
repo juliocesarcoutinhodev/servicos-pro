@@ -51,13 +51,13 @@ public class SmtpAccountNotificationAdapter implements AccountNotificationGatewa
 
     @Async("mailTaskExecutor")
     @Override
-    public void sendPasswordResetEmail(User user, String resetLink, OffsetDateTime expiresAt) {
+    public void sendPasswordResetEmail(User user, String otpCode, OffsetDateTime expiresAt) {
         try {
             String htmlBody = htmlTemplateRenderer.render(
                     "password-reset",
                     Map.of(
                             "userName", user.getName(),
-                            "resetLink", resetLink,
+                            "resetCode", otpCode,
                             "expiresAt", EXPIRATION_FORMATTER.format(expiresAt.withOffsetSameInstant(ZoneOffset.UTC)),
                             "year", String.valueOf(OffsetDateTime.now(ZoneOffset.UTC).getYear())
                     )

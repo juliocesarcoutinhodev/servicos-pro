@@ -115,7 +115,7 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.ACCEPTED)
                 .body(ApiResponse.of(
                         HttpStatus.ACCEPTED,
-                        "Se o email estiver cadastrado, enviaremos as instrucoes para redefinicao de senha.",
+                        "Se o email estiver cadastrado, enviaremos um codigo para redefinicao de senha.",
                         null
                 ));
     }

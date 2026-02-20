@@ -32,6 +32,17 @@ export interface LoginResponseData {
   expiresIn: number;
 }
 
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  /** 6-digit OTP code received via email */
+  code: string;
+  email: string;
+  newPassword: string;
+}
+
 /** Generic backend envelope: { timestamp, status, message, data } */
 export interface ApiSuccessResponse<T> {
   timestamp: string;
@@ -49,4 +60,3 @@ export interface ApiErrorResponse {
   path: string;
   details?: Record<string, string>;
 }
-

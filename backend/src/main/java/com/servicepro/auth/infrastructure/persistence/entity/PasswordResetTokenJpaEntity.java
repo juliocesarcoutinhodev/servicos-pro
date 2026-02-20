@@ -7,7 +7,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
@@ -18,12 +17,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table(
-        name = "tb_password_reset_tokens",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uk_tb_password_reset_tokens_token_hash", columnNames = "token_hash")
-        }
-)
+@Table(name = "tb_password_reset_tokens")
 @NoArgsConstructor
 public class PasswordResetTokenJpaEntity {
 
