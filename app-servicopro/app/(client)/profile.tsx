@@ -24,7 +24,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -97,7 +97,6 @@ function InfoRow({ icon, label, value, isLast = false }: InfoRowProps) {
 export default function ClientProfileScreen() {
   const router = useRouter();
   const { signOut } = useAuth();
-  const insets = useSafeAreaInsets();
 
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -179,6 +178,7 @@ export default function ClientProfileScreen() {
       <StatusBar style="light" />
       <ScrollView
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 32 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -188,10 +188,11 @@ export default function ClientProfileScreen() {
         }
       >
         {/* ── Hero Header ─────────────────────────────────────────────────── */}
-        <LinearGradient
-          colors={["#1E40AF", "#3B82F6"]}
-          style={{ paddingTop: insets.top + 16, paddingBottom: 40, paddingHorizontal: 24 }}
-        >
+        <SafeAreaView edges={["top"]} style={{ backgroundColor: "transparent" }}>
+          <LinearGradient
+            colors={["#1E40AF", "#3B82F6"]}
+            style={{ paddingTop: 16, paddingBottom: 40, paddingHorizontal: 24 }}
+          >
           {/* Navigation */}
           <View className="flex-row items-center justify-between mb-8">
             <TouchableOpacity
@@ -240,6 +241,7 @@ export default function ClientProfileScreen() {
             </View>
           </View>
         </LinearGradient>
+        </SafeAreaView>
 
         {/* ── Content ─────────────────────────────────────────────────────── */}
         <View className="px-6 -mt-4">
@@ -305,16 +307,6 @@ export default function ClientProfileScreen() {
             />
           </View>
 
-          {/* Logout button */}
-          <TouchableOpacity
-            onPress={handleLogout}
-            className="bg-white rounded-2xl p-5 shadow-sm border border-red-100 mb-8 flex-row items-center justify-center gap-3"
-          >
-            <LogOut size={20} color="#EF4444" />
-            <Text className="text-[#EF4444] font-semibold text-base">
-              Sair da conta
-            </Text>
-          </TouchableOpacity>
         </View>
       </ScrollView>
     </View>

@@ -1,6 +1,6 @@
 import { cn } from "@/utils/cn";
 import { Eye, EyeOff } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { forwardRef, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -18,17 +18,20 @@ interface InputProps extends TextInputProps {
   showPasswordToggle?: boolean;
 }
 
-export function Input({
-  label,
-  error,
-  containerClassName,
-  inputClassName,
-  className,
-  style,
-  showPasswordToggle = false,
-  secureTextEntry,
-  ...props
-}: InputProps) {
+export const Input = forwardRef<TextInput, InputProps>(function Input(
+  {
+    label,
+    error,
+    containerClassName,
+    inputClassName,
+    className,
+    style,
+    showPasswordToggle = false,
+    secureTextEntry,
+    ...props
+  },
+  ref
+) {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const isPassword = secureTextEntry && showPasswordToggle;
 
@@ -39,6 +42,7 @@ export function Input({
       )}
       <View className="relative">
         <TextInput
+          ref={ref}
           className={cn(
             "w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900",
             error && "border-red-500",
@@ -72,7 +76,7 @@ export function Input({
       {error && <Text className="text-red-500 text-sm mt-1">{error}</Text>}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   input: {
