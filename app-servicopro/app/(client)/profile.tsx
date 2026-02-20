@@ -24,7 +24,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -97,6 +97,7 @@ function InfoRow({ icon, label, value, isLast = false }: InfoRowProps) {
 export default function ClientProfileScreen() {
   const router = useRouter();
   const { signOut } = useAuth();
+  const insets = useSafeAreaInsets();
 
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -141,10 +142,10 @@ export default function ClientProfileScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#F8FAFC] items-center justify-center">
+      <View className="flex-1 bg-[#F8FAFC] items-center justify-center">
         <ActivityIndicator size="large" color="#3B82F6" />
         <Text className="mt-4 text-[#64748B]">Carregando perfil...</Text>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -152,7 +153,7 @@ export default function ClientProfileScreen() {
 
   if (error || !user) {
     return (
-      <SafeAreaView className="flex-1 bg-[#F8FAFC] items-center justify-center px-8">
+      <View className="flex-1 bg-[#F8FAFC] items-center justify-center px-8">
         <UserCircle2 size={64} color="#CBD5E1" />
         <Text className="text-lg font-semibold text-[#1E293B] mt-4 mb-2">
           Ops! Algo deu errado
@@ -164,7 +165,7 @@ export default function ClientProfileScreen() {
         >
           <Text className="text-white font-semibold">Tentar novamente</Text>
         </TouchableOpacity>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -189,7 +190,7 @@ export default function ClientProfileScreen() {
         {/* ── Hero Header ─────────────────────────────────────────────────── */}
         <LinearGradient
           colors={["#1E40AF", "#3B82F6"]}
-          className="pt-16 pb-10 px-6"
+          style={{ paddingTop: insets.top + 16, paddingBottom: 40, paddingHorizontal: 24 }}
         >
           {/* Navigation */}
           <View className="flex-row items-center justify-between mb-8">

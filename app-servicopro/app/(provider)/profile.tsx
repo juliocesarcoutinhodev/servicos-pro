@@ -27,7 +27,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -63,6 +63,7 @@ function getInitials(name: string): string {
 export default function ProviderProfileScreen() {
   const router = useRouter();
   const { signOut } = useAuth();
+  const insets = useSafeAreaInsets();
 
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -103,10 +104,10 @@ export default function ProviderProfileScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#F8FAFC] items-center justify-center">
+      <View className="flex-1 bg-[#F8FAFC] items-center justify-center">
         <ActivityIndicator size="large" color="#3B82F6" />
         <Text className="mt-4 text-[#64748B]">Carregando perfil...</Text>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -114,7 +115,7 @@ export default function ProviderProfileScreen() {
 
   if (error || !user) {
     return (
-      <SafeAreaView className="flex-1 bg-[#F8FAFC] items-center justify-center px-8">
+      <View className="flex-1 bg-[#F8FAFC] items-center justify-center px-8">
         <UserCircle2 size={64} color="#CBD5E1" />
         <Text className="text-lg font-semibold text-[#1E293B] mt-4 mb-2">
           Ops! Algo deu errado
@@ -126,14 +127,14 @@ export default function ProviderProfileScreen() {
         >
           <Text className="text-white font-semibold">Tentar novamente</Text>
         </TouchableOpacity>
-      </SafeAreaView>
+      </View>
     );
   }
 
   const initials = getInitials(user.name);
 
   return (
-    <SafeAreaView className="flex-1 bg-[#F8FAFC]" edges={["top"]}>
+    <View className="flex-1 bg-[#F8FAFC]">
       <StatusBar style="light" />
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -147,18 +148,23 @@ export default function ProviderProfileScreen() {
       >
         {/* ── Header ──────────────────────────────────────────────────────── */}
         <View className="relative">
-          <LinearGradient colors={["#1E40AF", "#3B82F6"]} className="h-48" />
+          <LinearGradient
+            colors={["#1E40AF", "#3B82F6"]}
+            style={{ height: 192 + insets.top }}
+          />
 
           <TouchableOpacity
             onPress={() => router.back()}
-            className="absolute top-6 left-6 w-10 h-10 rounded-full bg-white/90 items-center justify-center shadow-lg"
+            style={{ top: insets.top + 16 }}
+            className="absolute left-6 w-10 h-10 rounded-full bg-white/90 items-center justify-center shadow-lg"
           >
             <ChevronLeft size={24} color="#1F2937" />
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={handleLogout}
-            className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/90 items-center justify-center shadow-lg"
+            style={{ top: insets.top + 16 }}
+            className="absolute right-6 w-10 h-10 rounded-full bg-white/90 items-center justify-center shadow-lg"
           >
             <LogOut size={20} color="#EF4444" />
           </TouchableOpacity>
@@ -272,6 +278,6 @@ export default function ProviderProfileScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
