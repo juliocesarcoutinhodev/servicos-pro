@@ -97,8 +97,8 @@
       "type": "string"
     },
     {
-      "key": "passwordResetToken",
-      "value": "token-gerado-no-email",
+      "key": "passwordResetCode",
+      "value": "123456",
       "type": "string"
     },
     {
@@ -370,7 +370,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"token\": \"{{passwordResetToken}}\",\n  \"newPassword\": \"{{defaultPassword}}\"\n}"
+              "raw": "{\n  \"email\": \"{{clientEmail}}\",\n  \"code\": \"{{passwordResetCode}}\",\n  \"newPassword\": \"{{defaultPassword}}\"\n}"
             },
             "description": "POST /api/v1/auth/reset-password",
             "url": "{{baseUrl}}/api/v1/auth/reset-password"

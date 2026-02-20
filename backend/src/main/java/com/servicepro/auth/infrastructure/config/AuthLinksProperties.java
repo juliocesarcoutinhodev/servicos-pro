@@ -16,7 +16,4 @@ public class AuthLinksProperties {
 
     @NotBlank
     private String loginUrl = "http://localhost:19006/login";
-
-    @NotBlank
-    private String resetPasswordUrl = "http://localhost:19006/reset-password?token=%s";
 }

@@ -7,5 +7,5 @@ public interface AccountNotificationGateway {
 
     void sendWelcomeEmail(User user);
 
-    void sendPasswordResetEmail(User user, String resetLink, OffsetDateTime expiresAt);
+    void sendPasswordResetEmail(User user, String otpCode, OffsetDateTime expiresAt);
 }

@@ -49,15 +49,15 @@ Backend do ServicePro com Java 25 + Spring Boot 3.5.6, arquitetura DDD (modular 
 - Cadastro (`POST /api/v1/auth/signup`) dispara email assíncrono de boas-vindas.
 - Fluxo de esqueci minha senha:
   - `POST /api/v1/auth/forgot-password` (sempre responde 202 para evitar enumeração de usuários)
-  - `POST /api/v1/auth/reset-password` (troca senha com token)
-- O token de reset é persistido com hash (`tb_password_reset_tokens`) e expiração.
+  - `POST /api/v1/auth/reset-password` (troca senha com `email + code + newPassword`)
+- Um codigo OTP (6 digitos) e enviado por email.
+- O hash do codigo de reset e persistido em `tb_password_reset_tokens` com expiração.
 - Ao redefinir senha, refresh tokens ativos do usuário são revogados.
 
 Variáveis principais:
 
 - `AUTH_PASSWORD_RESET_TOKEN_TTL_SECONDS`
 - `AUTH_LOGIN_URL`
-- `AUTH_RESET_PASSWORD_URL` (aceita `%s` para injetar token)
 - `APP_MAIL_ENABLED`
 - `APP_MAIL_HOST`
 - `APP_MAIL_PORT`

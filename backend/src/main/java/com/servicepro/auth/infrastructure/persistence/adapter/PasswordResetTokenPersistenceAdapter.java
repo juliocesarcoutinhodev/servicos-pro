@@ -5,7 +5,9 @@ import com.servicepro.auth.domain.model.PasswordResetToken;
 import com.servicepro.auth.infrastructure.persistence.entity.PasswordResetTokenJpaEntity;
 import com.servicepro.auth.infrastructure.persistence.mapper.PasswordResetTokenPersistenceMapper;
 import com.servicepro.auth.infrastructure.persistence.repository.PasswordResetTokenJpaRepository;
+import java.time.OffsetDateTime;
 import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -23,8 +25,13 @@ public class PasswordResetTokenPersistenceAdapter implements PasswordResetTokenG
     }
 
     @Override
-    public Optional<PasswordResetToken> findByTokenHash(String tokenHash) {
-        return repository.findByTokenHash(tokenHash)
+    public Optional<PasswordResetToken> findLatestActiveByUserIdAndTokenHash(UUID userId, String tokenHash) {
+        return repository.findTopByUserIdAndTokenHashAndUsedAtIsNullOrderByCreatedAtDesc(userId, tokenHash)
                 .map(mapper::toDomain);
+    }
+
+    @Override
+    public void markAllAsUsedByUserId(UUID userId, OffsetDateTime usedAt) {
+        repository.markAllAsUsedByUserId(userId, usedAt);
     }
 }

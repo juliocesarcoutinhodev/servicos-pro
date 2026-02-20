@@ -387,7 +387,7 @@ class AuthControllerTest {
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.status").value(202))
                 .andExpect(jsonPath("$.message")
-                        .value("Se o email estiver cadastrado, enviaremos as instrucoes para redefinicao de senha."));
+                        .value("Se o email estiver cadastrado, enviaremos um codigo para redefinicao de senha."));
 
         then(forgotPasswordRequestMapper).should().toCommand(any(ForgotPasswordRequest.class));
         then(forgotPasswordUseCase).should().execute(command);
@@ -395,8 +395,8 @@ class AuthControllerTest {
 
     @Test
     void shouldReturn200WhenResetPasswordSucceeds() throws Exception {
-        ResetPasswordRequest request = new ResetPasswordRequest("reset-token", "NovaSenha123");
-        ResetPasswordCommand command = new ResetPasswordCommand("reset-token", "NovaSenha123");
+        ResetPasswordRequest request = new ResetPasswordRequest("joao@email.com", "123456", "NovaSenha123");
+        ResetPasswordCommand command = new ResetPasswordCommand("joao@email.com", "123456", "NovaSenha123");
 
         given(resetPasswordRequestMapper.toCommand(any(ResetPasswordRequest.class))).willReturn(command);
 
@@ -413,8 +413,8 @@ class AuthControllerTest {
 
     @Test
     void shouldReturn400WhenResetPasswordTokenIsInvalid() throws Exception {
-        ResetPasswordRequest request = new ResetPasswordRequest("reset-token", "NovaSenha123");
-        ResetPasswordCommand command = new ResetPasswordCommand("reset-token", "NovaSenha123");
+        ResetPasswordRequest request = new ResetPasswordRequest("joao@email.com", "123456", "NovaSenha123");
+        ResetPasswordCommand command = new ResetPasswordCommand("joao@email.com", "123456", "NovaSenha123");
 
         given(resetPasswordRequestMapper.toCommand(any(ResetPasswordRequest.class))).willReturn(command);
         willThrow(new InvalidPasswordResetTokenException())
@@ -426,7 +426,7 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.message", containsString("Token de redefinicao")));
+                .andExpect(jsonPath("$.message", containsString("Codigo de redefinicao")));
     }
 
     @Test

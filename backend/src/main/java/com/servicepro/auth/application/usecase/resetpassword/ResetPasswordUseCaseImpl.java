@@ -9,8 +9,11 @@ import com.servicepro.auth.domain.gateway.RefreshTokenGateway;
 import com.servicepro.auth.domain.gateway.RefreshTokenHasher;
 import com.servicepro.auth.domain.gateway.UserGateway;
 import com.servicepro.auth.domain.model.PasswordResetToken;
+import com.servicepro.auth.domain.model.User;
+import com.servicepro.auth.domain.model.valueobject.Email;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +24,8 @@ public class ResetPasswordUseCaseImpl implements ResetPasswordUseCase {
 
     private static final int PASSWORD_MIN_LENGTH = 8;
     private static final int PASSWORD_MAX_LENGTH = 72;
+    private static final int OTP_LENGTH = 6;
+    private static final Pattern OTP_PATTERN = Pattern.compile("^\\d{" + OTP_LENGTH + "}$");
 
     private final PasswordResetTokenGateway passwordResetTokenGateway;
     private final RefreshTokenHasher refreshTokenHasher;
@@ -33,14 +38,14 @@ public class ResetPasswordUseCaseImpl implements ResetPasswordUseCase {
     @Transactional
     public void execute(ResetPasswordCommand command) {
         validatePassword(command.newPassword());
+        validateOtpCode(command.code());
 
-        String rawToken = command.token();
-        if (rawToken == null || rawToken.isBlank()) {
-            throw new InvalidPasswordResetTokenException();
-        }
+        Email email = Email.of(command.email());
+        User user = userGateway.findByEmail(email.value()).orElseThrow(InvalidPasswordResetTokenException::new);
 
-        String tokenHash = refreshTokenHasher.hash(rawToken);
-        PasswordResetToken passwordResetToken = passwordResetTokenGateway.findByTokenHash(tokenHash)
+        String tokenHash = refreshTokenHasher.hash(command.code());
+        PasswordResetToken passwordResetToken = passwordResetTokenGateway
+                .findLatestActiveByUserIdAndTokenHash(user.getId(), tokenHash)
                 .orElseThrow(InvalidPasswordResetTokenException::new);
 
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
@@ -48,13 +53,11 @@ public class ResetPasswordUseCaseImpl implements ResetPasswordUseCase {
             throw new InvalidPasswordResetTokenException();
         }
 
-        userGateway.findById(passwordResetToken.getUserId()).orElseThrow(InvalidPasswordResetTokenException::new);
-
         String newPasswordHash = passwordHasher.hash(command.newPassword());
-        userGateway.updatePasswordHash(passwordResetToken.getUserId(), newPasswordHash);
+        userGateway.updatePasswordHash(user.getId(), newPasswordHash);
 
-        refreshTokenGateway.revokeAllByUserId(passwordResetToken.getUserId());
-        refreshTokenCacheGateway.evictAll(passwordResetToken.getUserId());
+        refreshTokenGateway.revokeAllByUserId(user.getId());
+        refreshTokenCacheGateway.evictAll(user.getId());
         passwordResetTokenGateway.save(passwordResetToken.markAsUsed(now));
     }
 
@@ -64,6 +67,12 @@ public class ResetPasswordUseCaseImpl implements ResetPasswordUseCase {
         }
         if (rawPassword.length() < PASSWORD_MIN_LENGTH || rawPassword.length() > PASSWORD_MAX_LENGTH) {
             throw new InvalidSignupPasswordException();
+        }
+    }
+
+    private void validateOtpCode(String otpCode) {
+        if (otpCode == null || !OTP_PATTERN.matcher(otpCode).matches()) {
+            throw new InvalidPasswordResetTokenException();
         }
     }
 }
