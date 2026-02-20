@@ -44,17 +44,21 @@ function useProtectedRoute(user: AuthUser | null, isLoading: boolean) {
   useEffect(() => {
     if (isLoading) return;
 
+    const segment = segments[0] as string | undefined;
     const inAuthGroup =
-      segments[0] === "login" ||
-      segments[0] === "signup" ||
-      segments[0] === undefined;
+      segment === "login" ||
+      segment === "signup" ||
+      segment === "forgot-password" ||
+      segment === "verify-otp" ||
+      segment === "reset-password" ||
+      segment === undefined;
 
     if (!user && !inAuthGroup) {
       router.replace("/login");
     } else if (user) {
       const targetGroup =
         user.role === "CLIENT" ? "(client)" : "(provider)";
-      const inCorrectGroup = segments[0] === targetGroup;
+      const inCorrectGroup = segment === targetGroup;
 
       if (inAuthGroup || !inCorrectGroup) {
         router.replace(
