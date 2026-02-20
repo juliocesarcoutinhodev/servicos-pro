@@ -38,7 +38,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -75,46 +75,46 @@ class ProviderServiceControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     private CreateProviderServiceUseCase createProviderServiceUseCase;
 
-    @MockBean
+    @MockitoBean
     private ListProviderServicesUseCase listProviderServicesUseCase;
 
-    @MockBean
+    @MockitoBean
     private UpdateProviderServiceUseCase updateProviderServiceUseCase;
 
-    @MockBean
+    @MockitoBean
     private DeleteProviderServiceUseCase deleteProviderServiceUseCase;
 
-    @MockBean
+    @MockitoBean
     private CreateProviderServiceRequestMapper createProviderServiceRequestMapper;
 
-    @MockBean
+    @MockitoBean
     private UpdateProviderServiceRequestMapper updateProviderServiceRequestMapper;
 
-    @MockBean
+    @MockitoBean
     private ProviderServiceResponseMapper providerServiceResponseMapper;
 
-    @MockBean
+    @MockitoBean
     private ListServiceCategoriesUseCase listServiceCategoriesUseCase;
 
-    @MockBean
+    @MockitoBean
     private CreateServiceCategoryUseCase createServiceCategoryUseCase;
 
-    @MockBean
+    @MockitoBean
     private CreateServiceCategoryRequestMapper createServiceCategoryRequestMapper;
 
-    @MockBean
+    @MockitoBean
     private ServiceCategoryResponseMapper serviceCategoryResponseMapper;
 
-    @MockBean
+    @MockitoBean
     private AuthRateLimitService authRateLimitService;
 
-    @MockBean
+    @MockitoBean
     private TokenGateway tokenGateway;
 
-    @MockBean
+    @MockitoBean
     private UserDetailsService userDetailsService;
 
     @Test

@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -37,25 +37,25 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class FoundationErrorHandlingIntegrationTest {
 
-    @MockBean
+    @MockitoBean
     private UserGateway userGateway;
 
-    @MockBean
+    @MockitoBean
     private RefreshTokenGateway refreshTokenGateway;
 
-    @MockBean
+    @MockitoBean
     private RefreshTokenCacheGateway refreshTokenCacheGateway;
 
-    @MockBean
+    @MockitoBean
     private RateLimitGateway rateLimitGateway;
 
-    @MockBean
+    @MockitoBean
     private PasswordResetTokenGateway passwordResetTokenGateway;
 
-    @MockBean
+    @MockitoBean
     private ServiceCategoryGateway serviceCategoryGateway;
 
-    @MockBean
+    @MockitoBean
     private ProviderServiceGateway providerServiceGateway;
 
     @Autowired
