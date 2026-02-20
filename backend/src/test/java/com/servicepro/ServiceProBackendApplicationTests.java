@@ -7,6 +7,7 @@ import com.servicepro.auth.domain.gateway.UserGateway;
 import com.servicepro.auth.domain.gateway.PasswordResetTokenGateway;
 import com.servicepro.catalog.domain.gateway.ServiceCategoryGateway;
 import com.servicepro.providers.domain.gateway.ProviderDirectoryGateway;
+import com.servicepro.providers.domain.gateway.ProviderProfileGateway;
 import com.servicepro.providers.domain.gateway.ProviderServiceGateway;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -40,6 +41,9 @@ class ServiceProBackendApplicationTests {
 
     @MockitoBean
     private ProviderDirectoryGateway providerDirectoryGateway;
+
+    @MockitoBean
+    private ProviderProfileGateway providerProfileGateway;
 
     @Test
     void contextLoads() {

@@ -7,6 +7,7 @@ import com.servicepro.auth.domain.gateway.UserGateway;
 import com.servicepro.auth.domain.gateway.PasswordResetTokenGateway;
 import com.servicepro.catalog.domain.gateway.ServiceCategoryGateway;
 import com.servicepro.providers.domain.gateway.ProviderDirectoryGateway;
+import com.servicepro.providers.domain.gateway.ProviderProfileGateway;
 import com.servicepro.providers.domain.gateway.ProviderServiceGateway;
 import com.servicepro.shared.domain.exception.NegocioException;
 import com.servicepro.shared.domain.exception.RecursoNaoEncontradoException;
@@ -61,6 +62,9 @@ class FoundationErrorHandlingIntegrationTest {
 
     @MockitoBean
     private ProviderDirectoryGateway providerDirectoryGateway;
+
+    @MockitoBean
+    private ProviderProfileGateway providerProfileGateway;
 
     @Autowired
     private MockMvc mockMvc;

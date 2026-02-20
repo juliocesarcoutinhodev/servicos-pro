@@ -70,11 +70,14 @@ Variáveis principais:
 Endpoints implementados no MVP:
 
 - `POST /api/v1/services/categories` (PROVIDER/ADMIN)
+- `GET /api/v1/services/categories` (publico)
+- `GET /api/v1/providers` (publico, paginado, filtro opcional por `categoryId`)
+- `GET /api/v1/providers/{id}` (publico, perfil completo com servicos)
+- `GET /api/v1/providers/{id}/reviews` (publico, paginado)
 - `POST /api/v1/providers/services` (PROVIDER)
 - `GET /api/v1/providers/services` (PROVIDER)
 - `PUT /api/v1/providers/services/{id}` (PROVIDER)
 - `DELETE /api/v1/providers/services/{id}` (PROVIDER)
-- `GET /api/v1/services/categories` (publico)
 
 Observacoes:
 
@@ -82,6 +85,8 @@ Observacoes:
 - Categorias sao carregadas da tabela `tb_service_categories`.
 - Cadastro de categoria usa normalizacao de nome (minusculo/sem acento) para evitar duplicidade simples.
 - Servicos do prestador usam `tb_provider_services`.
+- Avaliacoes usam `tb_provider_reviews`.
+- No endpoint `GET /api/v1/providers/{id}`, os campos `bio`, `totalServicesCompleted` e `approvalRate` estao planejados para fase futura e atualmente retornam `null`.
 
 ## Testes
 

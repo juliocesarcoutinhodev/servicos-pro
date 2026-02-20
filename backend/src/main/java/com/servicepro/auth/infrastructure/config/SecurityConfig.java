@@ -24,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.RegexRequestMatcher;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -55,6 +56,14 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.GET, "/api/v1/services/categories").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/providers").permitAll()
+                        .requestMatchers(new RegexRequestMatcher(
+                                "^/api/v1/providers/[0-9a-fA-F\\-]{36}$",
+                                HttpMethod.GET.name()
+                        )).permitAll()
+                        .requestMatchers(new RegexRequestMatcher(
+                                "^/api/v1/providers/[0-9a-fA-F\\-]{36}/reviews$",
+                                HttpMethod.GET.name()
+                        )).permitAll()
                         .requestMatchers(
                                 "/api/v1/auth/signup",
                                 "/api/v1/auth/login",

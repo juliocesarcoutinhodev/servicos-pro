@@ -18,16 +18,28 @@ import com.servicepro.catalog.interfaces.mapper.ServiceCategoryResponseMapper;
 import com.servicepro.providers.application.usecase.createproviderservice.CreateProviderServiceCommand;
 import com.servicepro.providers.application.usecase.createproviderservice.CreateProviderServiceUseCase;
 import com.servicepro.providers.application.usecase.deleteproviderservice.DeleteProviderServiceUseCase;
+import com.servicepro.providers.application.usecase.getproviderprofile.GetProviderProfileCommand;
+import com.servicepro.providers.application.usecase.getproviderprofile.GetProviderProfileUseCase;
 import com.servicepro.providers.application.usecase.listproviderservices.ListProviderServicesUseCase;
 import com.servicepro.providers.application.usecase.listproviders.ListProvidersCommand;
 import com.servicepro.providers.application.usecase.listproviders.ListProvidersUseCase;
+import com.servicepro.providers.application.usecase.listproviderreviews.ListProviderReviewsCommand;
+import com.servicepro.providers.application.usecase.listproviderreviews.ListProviderReviewsUseCase;
 import com.servicepro.providers.application.usecase.updateproviderservice.UpdateProviderServiceUseCase;
+import com.servicepro.providers.domain.model.ProviderPublicProfile;
+import com.servicepro.providers.domain.model.ProviderPublicService;
+import com.servicepro.providers.domain.model.ProviderReview;
 import com.servicepro.providers.domain.model.ProviderService;
 import com.servicepro.providers.domain.model.ProviderSummary;
 import com.servicepro.providers.interfaces.dto.CreateProviderServiceRequest;
+import com.servicepro.providers.interfaces.dto.ProviderProfileResponse;
+import com.servicepro.providers.interfaces.dto.ProviderPublicServiceResponse;
+import com.servicepro.providers.interfaces.dto.ProviderReviewResponse;
 import com.servicepro.providers.interfaces.dto.ProviderServiceResponse;
 import com.servicepro.providers.interfaces.dto.ProviderSummaryResponse;
 import com.servicepro.providers.interfaces.mapper.CreateProviderServiceRequestMapper;
+import com.servicepro.providers.interfaces.mapper.ProviderProfileResponseMapper;
+import com.servicepro.providers.interfaces.mapper.ProviderReviewResponseMapper;
 import com.servicepro.providers.interfaces.mapper.ProviderServiceResponseMapper;
 import com.servicepro.providers.interfaces.mapper.ProviderSummaryResponseMapper;
 import com.servicepro.providers.interfaces.mapper.UpdateProviderServiceRequestMapper;
@@ -92,6 +104,12 @@ class ProviderServiceControllerTest {
     private ListProvidersUseCase listProvidersUseCase;
 
     @MockitoBean
+    private GetProviderProfileUseCase getProviderProfileUseCase;
+
+    @MockitoBean
+    private ListProviderReviewsUseCase listProviderReviewsUseCase;
+
+    @MockitoBean
     private UpdateProviderServiceUseCase updateProviderServiceUseCase;
 
     @MockitoBean
@@ -108,6 +126,12 @@ class ProviderServiceControllerTest {
 
     @MockitoBean
     private ProviderSummaryResponseMapper providerSummaryResponseMapper;
+
+    @MockitoBean
+    private ProviderProfileResponseMapper providerProfileResponseMapper;
+
+    @MockitoBean
+    private ProviderReviewResponseMapper providerReviewResponseMapper;
 
     @MockitoBean
     private ListServiceCategoriesUseCase listServiceCategoriesUseCase;
@@ -198,6 +222,103 @@ class ProviderServiceControllerTest {
                 .andExpect(jsonPath("$.data.content[0].averageRating").value(4.7))
                 .andExpect(jsonPath("$.data.content[0].totalReviews").value(12))
                 .andExpect(jsonPath("$.data.content[0].serviceCount").value(5))
+                .andExpect(jsonPath("$.data.totalElements").value(1))
+                .andExpect(jsonPath("$.data.page").value(0))
+                .andExpect(jsonPath("$.data.size").value(10));
+    }
+
+    @Test
+    void shouldAllowPublicProviderProfileWithoutAuthentication() throws Exception {
+        UUID providerId = UUID.randomUUID();
+        UUID serviceId = UUID.randomUUID();
+
+        ProviderPublicProfile providerPublicProfile = new ProviderPublicProfile(
+                providerId,
+                "Joao Santos",
+                List.of("Eletricista"),
+                null,
+                4.8,
+                127,
+                null,
+                null,
+                true,
+                List.of(new ProviderPublicService(
+                        serviceId,
+                        "Instalacao de tomadas",
+                        5000L,
+                        "Servico residencial"
+                ))
+        );
+
+        ProviderProfileResponse response = new ProviderProfileResponse(
+                providerId,
+                "Joao Santos",
+                List.of("Eletricista"),
+                null,
+                4.8,
+                127,
+                null,
+                null,
+                true,
+                List.of(new ProviderPublicServiceResponse(
+                        serviceId,
+                        "Instalacao de tomadas",
+                        5000L,
+                        "Servico residencial"
+                ))
+        );
+
+        when(getProviderProfileUseCase.execute(new GetProviderProfileCommand(providerId))).thenReturn(providerPublicProfile);
+        when(providerProfileResponseMapper.toResponse(providerPublicProfile)).thenReturn(response);
+
+        mockMvc.perform(get("/api/v1/providers/{id}", providerId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.id").value(providerId.toString()))
+                .andExpect(jsonPath("$.data.name").value("Joao Santos"))
+                .andExpect(jsonPath("$.data.categoryNames[0]").value("Eletricista"))
+                .andExpect(jsonPath("$.data.averageRating").value(4.8))
+                .andExpect(jsonPath("$.data.totalReviews").value(127))
+                .andExpect(jsonPath("$.data.services[0].id").value(serviceId.toString()))
+                .andExpect(jsonPath("$.data.services[0].name").value("Instalacao de tomadas"))
+                .andExpect(jsonPath("$.data.services[0].priceCents").value(5000));
+    }
+
+    @Test
+    void shouldAllowPublicProviderReviewsWithoutAuthentication() throws Exception {
+        UUID providerId = UUID.randomUUID();
+        UUID reviewId = UUID.randomUUID();
+        OffsetDateTime createdAt = OffsetDateTime.now();
+
+        ProviderReview review = new ProviderReview(
+                reviewId,
+                "Ana Paula",
+                5,
+                "Excelente profissional!",
+                createdAt
+        );
+
+        ProviderReviewResponse response = new ProviderReviewResponse(
+                reviewId,
+                "Ana Paula",
+                5,
+                "Excelente profissional!",
+                createdAt
+        );
+
+        when(listProviderReviewsUseCase.execute(new ListProviderReviewsCommand(providerId, 0, 10)))
+                .thenReturn(new PageImpl<>(List.of(review), PageRequest.of(0, 10), 1));
+        when(providerReviewResponseMapper.toResponseList(anyList())).thenReturn(List.of(response));
+
+        mockMvc.perform(get("/api/v1/providers/{id}/reviews", providerId)
+                        .param("page", "0")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.content[0].id").value(reviewId.toString()))
+                .andExpect(jsonPath("$.data.content[0].clientName").value("Ana Paula"))
+                .andExpect(jsonPath("$.data.content[0].rating").value(5))
+                .andExpect(jsonPath("$.data.content[0].comment").value("Excelente profissional!"))
                 .andExpect(jsonPath("$.data.totalElements").value(1))
                 .andExpect(jsonPath("$.data.page").value(0))
                 .andExpect(jsonPath("$.data.size").value(10));

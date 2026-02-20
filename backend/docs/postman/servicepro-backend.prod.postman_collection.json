@@ -148,6 +148,16 @@
       "key": "retryAfterSeconds",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "publicProviderId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "providerReviewId",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -781,6 +791,67 @@
             ],
             "description": "GET /api/v1/providers?page=0&size=10 (categoryId opcional)",
             "url": "{{baseUrl}}/api/v1/providers?page=0&size=10"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Public Provider Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "GET /api/v1/providers/{id}",
+            "url": "{{baseUrl}}/api/v1/providers/{{publicProviderId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "List Public Provider Reviews",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const page = pm.response.json()?.data;",
+                  "const first = page?.content?.[0];",
+                  "if (first?.id) {",
+                  "  pm.collectionVariables.set('providerReviewId', first.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "description": "GET /api/v1/providers/{id}/reviews?page=0&size=10",
+            "url": "{{baseUrl}}/api/v1/providers/{{publicProviderId}}/reviews?page=0&size=10"
           },
           "response": []
         }
