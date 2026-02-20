@@ -2,8 +2,10 @@ import { API_BASE_URL, STORAGE_KEYS } from "@/constants/config";
 import {
   ApiSuccessResponse,
   AuthUser,
+  ForgotPasswordRequest,
   LoginRequest,
   LoginResponseData,
+  ResetPasswordRequest,
   SignupRequest,
 } from "@/types/auth";
 import axios, {
@@ -190,6 +192,25 @@ export async function logout(): Promise<void> {
     await SecureStore.deleteItemAsync(STORAGE_KEYS.ACCESS_TOKEN);
     await SecureStore.deleteItemAsync(STORAGE_KEYS.USER);
   }
+}
+
+/**
+ * Sends a password reset link to the provided email address.
+ * Backend always returns 202 regardless of whether the email exists (security).
+ */
+export async function forgotPassword(
+  payload: ForgotPasswordRequest
+): Promise<void> {
+  await apiClient.post("/api/v1/auth/forgot-password", payload);
+}
+
+/**
+ * Resets the user's password using the token received via email link.
+ */
+export async function resetPassword(
+  payload: ResetPasswordRequest
+): Promise<void> {
+  await apiClient.post("/api/v1/auth/reset-password", payload);
 }
 
 export default apiClient;

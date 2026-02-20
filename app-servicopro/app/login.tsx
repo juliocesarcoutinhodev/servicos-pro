@@ -182,8 +182,12 @@ export default function LoginScreen() {
               />
             </View>
 
-            {/* Esqueci a senha — placeholder para futuro */}
-            <TouchableOpacity className="self-end mb-6 -mt-1">
+            {/* Esqueci a senha */}
+            <TouchableOpacity
+              className="self-end mb-6 -mt-1"
+              activeOpacity={0.7}
+              onPress={() => router.push("/forgot-password")}
+            >
               <Text className="text-[#3B82F6] text-sm font-medium">
                 Esqueci minha senha
               </Text>

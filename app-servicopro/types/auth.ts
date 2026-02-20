@@ -40,6 +40,15 @@ export interface ApiSuccessResponse<T> {
   data: T;
 }
 
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
+}
+
 /** Generic backend error envelope: { timestamp, status, error, message, path, details? } */
 export interface ApiErrorResponse {
   timestamp: string;
