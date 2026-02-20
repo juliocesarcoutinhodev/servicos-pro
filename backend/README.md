@@ -65,6 +65,22 @@ Variáveis principais:
 - `APP_MAIL_FROM`
 - `APP_MAIL_PASSWORD`
 
+## Providers MVP: Servicos do Prestador
+
+Endpoints implementados no MVP:
+
+- `POST /api/v1/providers/services` (PROVIDER)
+- `GET /api/v1/providers/services` (PROVIDER)
+- `PUT /api/v1/providers/services/{id}` (PROVIDER)
+- `DELETE /api/v1/providers/services/{id}` (PROVIDER)
+- `GET /api/v1/services/categories` (publico)
+
+Observacoes:
+
+- O `providerId` e sempre resolvido pelo JWT (nao vem do frontend).
+- Categorias sao carregadas da tabela `tb_service_categories`.
+- Servicos do prestador usam `tb_provider_services`.
+
 ## Testes
 
 - `./mvnw test`

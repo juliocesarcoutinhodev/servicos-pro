@@ -26,3 +26,12 @@ Documentação funcional/técnica do backend.
 - `Reset Password`
 - `Logout`
 - `Me`
+
+## Fluxos Providers/Catalog já mapeados
+
+- `List Service Categories`
+- `Login Provider`
+- `Create Provider Service`
+- `List My Provider Services`
+- `Update Provider Service`
+- `Delete Provider Service`

@@ -5,6 +5,8 @@ import com.servicepro.auth.domain.gateway.RefreshTokenGateway;
 import com.servicepro.auth.domain.gateway.RateLimitGateway;
 import com.servicepro.auth.domain.gateway.UserGateway;
 import com.servicepro.auth.domain.gateway.PasswordResetTokenGateway;
+import com.servicepro.catalog.domain.gateway.ServiceCategoryGateway;
+import com.servicepro.providers.domain.gateway.ProviderServiceGateway;
 import com.servicepro.shared.domain.exception.NegocioException;
 import com.servicepro.shared.domain.exception.RecursoNaoEncontradoException;
 import org.junit.jupiter.api.Test;
@@ -49,6 +51,12 @@ class FoundationErrorHandlingIntegrationTest {
 
     @MockBean
     private PasswordResetTokenGateway passwordResetTokenGateway;
+
+    @MockBean
+    private ServiceCategoryGateway serviceCategoryGateway;
+
+    @MockBean
+    private ProviderServiceGateway providerServiceGateway;
 
     @Autowired
     private MockMvc mockMvc;
