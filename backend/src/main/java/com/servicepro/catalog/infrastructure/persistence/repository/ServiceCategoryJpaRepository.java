@@ -10,4 +10,6 @@ public interface ServiceCategoryJpaRepository extends JpaRepository<ServiceCateg
     List<ServiceCategoryJpaEntity> findAllByActiveTrueOrderByNameAsc();
 
     boolean existsByIdAndActiveTrue(UUID id);
+
+    boolean existsByNormalizedName(String normalizedName);
 }

@@ -17,6 +17,13 @@ public class ServiceCategoryPersistenceAdapter implements ServiceCategoryGateway
     private final ServiceCategoryPersistenceMapper serviceCategoryPersistenceMapper;
 
     @Override
+    public ServiceCategory save(ServiceCategory serviceCategory) {
+        return serviceCategoryPersistenceMapper.toDomain(
+                serviceCategoryJpaRepository.save(serviceCategoryPersistenceMapper.toJpaEntity(serviceCategory))
+        );
+    }
+
+    @Override
     public List<ServiceCategory> findAllActive() {
         return serviceCategoryJpaRepository.findAllByActiveTrueOrderByNameAsc().stream()
                 .map(serviceCategoryPersistenceMapper::toDomain)
@@ -26,5 +33,10 @@ public class ServiceCategoryPersistenceAdapter implements ServiceCategoryGateway
     @Override
     public boolean existsActiveById(UUID categoryId) {
         return serviceCategoryJpaRepository.existsByIdAndActiveTrue(categoryId);
+    }
+
+    @Override
+    public boolean existsByNormalizedName(String normalizedName) {
+        return serviceCategoryJpaRepository.existsByNormalizedName(normalizedName);
     }
 }

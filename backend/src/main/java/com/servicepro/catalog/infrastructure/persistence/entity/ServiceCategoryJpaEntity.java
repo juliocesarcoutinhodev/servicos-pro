@@ -15,7 +15,7 @@ import lombok.Setter;
 @Table(
         name = "tb_service_categories",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_tb_service_categories_slug", columnNames = "slug")
+                @UniqueConstraint(name = "uk_tb_service_categories_normalized_name", columnNames = "normalized_name")
         }
 )
 @NoArgsConstructor
@@ -24,14 +24,8 @@ public class ServiceCategoryJpaEntity extends BaseJpaEntity {
     @Column(nullable = false, length = 120)
     private String name;
 
-    @Column(nullable = false, length = 120)
-    private String slug;
-
-    @Column(length = 120)
-    private String icon;
-
-    @Column(length = 20)
-    private String color;
+    @Column(name = "normalized_name", nullable = false, length = 120)
+    private String normalizedName;
 
     @Column(length = 500)
     private String description;

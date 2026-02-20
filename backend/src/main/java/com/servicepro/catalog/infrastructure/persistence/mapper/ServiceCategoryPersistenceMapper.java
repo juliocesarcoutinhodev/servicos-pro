@@ -15,13 +15,13 @@ public interface ServiceCategoryPersistenceMapper {
         return ServiceCategory.restore(
                 entity.getId(),
                 entity.getName(),
-                entity.getSlug(),
-                entity.getIcon(),
-                entity.getColor(),
+                entity.getNormalizedName(),
                 entity.getDescription(),
                 entity.isActive(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
         );
     }
+
+    ServiceCategoryJpaEntity toJpaEntity(ServiceCategory serviceCategory);
 }

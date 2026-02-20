@@ -29,6 +29,7 @@ Documentação funcional/técnica do backend.
 
 ## Fluxos Providers/Catalog já mapeados
 
+- `Create Service Category`
 - `List Service Categories`
 - `Login Provider`
 - `Create Provider Service`

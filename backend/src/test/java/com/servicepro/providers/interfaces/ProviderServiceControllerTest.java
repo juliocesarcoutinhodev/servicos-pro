@@ -6,10 +6,14 @@ import com.servicepro.auth.domain.gateway.TokenGateway;
 import com.servicepro.auth.domain.model.AccessTokenClaims;
 import com.servicepro.auth.domain.model.Role;
 import com.servicepro.auth.infrastructure.config.SecurityConfig;
+import com.servicepro.catalog.application.usecase.createcategory.CreateServiceCategoryCommand;
+import com.servicepro.catalog.application.usecase.createcategory.CreateServiceCategoryUseCase;
 import com.servicepro.catalog.application.usecase.listcategories.ListServiceCategoriesUseCase;
 import com.servicepro.catalog.domain.model.ServiceCategory;
 import com.servicepro.catalog.interfaces.ServiceCategoryController;
+import com.servicepro.catalog.interfaces.dto.CreateServiceCategoryRequest;
 import com.servicepro.catalog.interfaces.dto.ServiceCategoryResponse;
+import com.servicepro.catalog.interfaces.mapper.CreateServiceCategoryRequestMapper;
 import com.servicepro.catalog.interfaces.mapper.ServiceCategoryResponseMapper;
 import com.servicepro.providers.application.usecase.createproviderservice.CreateProviderServiceCommand;
 import com.servicepro.providers.application.usecase.createproviderservice.CreateProviderServiceUseCase;
@@ -96,6 +100,12 @@ class ProviderServiceControllerTest {
     private ListServiceCategoriesUseCase listServiceCategoriesUseCase;
 
     @MockBean
+    private CreateServiceCategoryUseCase createServiceCategoryUseCase;
+
+    @MockBean
+    private CreateServiceCategoryRequestMapper createServiceCategoryRequestMapper;
+
+    @MockBean
     private ServiceCategoryResponseMapper serviceCategoryResponseMapper;
 
     @MockBean
@@ -113,8 +123,6 @@ class ProviderServiceControllerTest {
                 UUID.fromString("10000000-0000-0000-0000-000000000001"),
                 "Eletricista",
                 "eletricista",
-                "bolt",
-                "#FACC15",
                 "Instalacao e manutencao eletrica.",
                 true,
                 OffsetDateTime.now(),
@@ -124,9 +132,6 @@ class ProviderServiceControllerTest {
         ServiceCategoryResponse response = new ServiceCategoryResponse(
                 category.getId(),
                 category.getName(),
-                category.getSlug(),
-                category.getIcon(),
-                category.getColor(),
                 category.getDescription()
         );
 
@@ -136,7 +141,52 @@ class ProviderServiceControllerTest {
         mockMvc.perform(get("/api/v1/services/categories"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.data[0].slug").value("eletricista"));
+                .andExpect(jsonPath("$.data[0].name").value("Eletricista"));
+    }
+
+    @Test
+    void shouldCreateCategoryWhenAuthenticatedAsProvider() throws Exception {
+        UUID providerId = UUID.randomUUID();
+        mockAuthenticatedToken(PROVIDER_TOKEN, providerId, "provider@email.com", Role.PROVIDER);
+
+        CreateServiceCategoryRequest request = new CreateServiceCategoryRequest(
+                "Mecanico",
+                "Reparos automotivos em geral"
+        );
+
+        CreateServiceCategoryCommand command = new CreateServiceCategoryCommand(
+                "Mecanico",
+                "Reparos automotivos em geral"
+        );
+
+        ServiceCategory createdCategory = ServiceCategory.restore(
+                UUID.randomUUID(),
+                "Mecanico",
+                "mecanico",
+                "Reparos automotivos em geral",
+                true,
+                OffsetDateTime.now(),
+                OffsetDateTime.now()
+        );
+
+        ServiceCategoryResponse response = new ServiceCategoryResponse(
+                createdCategory.getId(),
+                createdCategory.getName(),
+                createdCategory.getDescription()
+        );
+
+        when(createServiceCategoryRequestMapper.toCommand(any(CreateServiceCategoryRequest.class)))
+                .thenReturn(command);
+        when(createServiceCategoryUseCase.execute(command)).thenReturn(createdCategory);
+        when(serviceCategoryResponseMapper.toResponse(createdCategory)).thenReturn(response);
+
+        mockMvc.perform(post("/api/v1/services/categories")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(PROVIDER_TOKEN))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value(201))
+                .andExpect(jsonPath("$.data.name").value("Mecanico"));
     }
 
     @Test
